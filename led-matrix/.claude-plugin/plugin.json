@@ -1,0 +1,23 @@
+{
+  "name": "led-matrix",
+  "version": "0.1.0",
+  "description": "Plays a working animation on an MCP2221 + HT16K33 LED matrix while Claude works, and blanks it when Claude is done.",
+  "author": {
+    "name": "David",
+    "email": "ApolloX939@users.noreply.github.com"
+  },
+  "userConfig": {
+    "binary": {
+      "type": "string",
+      "title": "claudematrix program",
+      "description": "Path to the claudematrix program that drives the matrix.",
+      "default": "/home/apollo/go/bin/claudematrix"
+    },
+    "brightness": {
+      "type": "number",
+      "title": "Brightness",
+      "description": "Matrix brightness, from 0.0 to 1.0.",
+      "default": 0.1
+    }
+  }
+}

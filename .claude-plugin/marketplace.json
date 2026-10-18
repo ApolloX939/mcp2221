@@ -1,0 +1,15 @@
+{
+  "name": "mcp2221",
+  "description": "Claude Code plugins for the MCP2221 USB-to-I2C adapter and its LED matrix.",
+  "owner": {
+    "name": "David",
+    "email": "ApolloX939@users.noreply.github.com"
+  },
+  "plugins": [
+    {
+      "name": "led-matrix",
+      "source": "./led-matrix",
+      "description": "Plays a working animation on an MCP2221 + HT16K33 LED matrix while Claude works, and blanks it when Claude is done."
+    }
+  ]
+}
