@@ -192,3 +192,7 @@ claudematrix and the plugin:
 - Blanking on SIGTERM, on parent exit, and on closed output.
 - Waiting while another program holds the adapter.
 - `claude plugin test led-matrix` passes.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
