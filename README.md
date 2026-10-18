@@ -90,6 +90,8 @@ frame 0     frame 1     frame 2     frame 3     frame 4     frame 5
 ········    ········    ········    ········    ···●●···    ●··●●··●
 ```
 
+See it running on the matrix: [claude-ing.mp4](claude-ing.mp4) (silent video).
+
 ### Install
 
 **1. The program.**
