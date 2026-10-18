@@ -1,5 +1,6 @@
 // claudematrix plays a "working" animation on the LED matrix until it is
-// stopped, then blanks the display.
+// stopped, then blanks the display. While a multi-part job is in progress
+// (see -progress) it draws a progress pie instead.
 //
 // The led-matrix Claude Code mod (led-matrix/ in this repo) starts it when Claude starts working and
 // stops it (SIGTERM) when Claude is done. It also stops if the program that
@@ -25,6 +26,7 @@ func main() {
 	addr := flag.Uint("addr", 0x70, "I2C address of the matrix")
 	frame := flag.Duration("frame", 120*time.Millisecond, "time per animation step")
 	heartbeat := flag.Duration("heartbeat", 0, "print a line this often, and stop when output is closed (0 = off)")
+	progressFile := flag.String("progress", defaultProgressFile(), "file the progress-pie plugin writes; \"\" = spinner only")
 	flag.Parse()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
@@ -43,20 +45,20 @@ func main() {
 	// (such as statmatrix) has it open.
 	lastErr := ""
 	for ctx.Err() == nil {
-		err := animate(ctx, byte(*addr), *brightness, *frame)
+		err := animate(ctx, byte(*addr), *brightness, *frame, *progressFile)
 		if err != nil && err.Error() != lastErr {
 			fmt.Fprintln(os.Stderr, "claudematrix:", err)
 			lastErr = err.Error()
 		}
 		select {
 		case <-ctx.Done():
-		case <-time.After(2 * time.Second):
+		case <-time.After(500 * time.Millisecond):
 		}
 	}
 }
 
 // animate runs the animation until ctx ends, then blanks the display.
-func animate(ctx context.Context, addr byte, brightness float64, frame time.Duration) error {
+func animate(ctx context.Context, addr byte, brightness float64, frame time.Duration, progressFile string) error {
 	bus, err := mcp2221.Open()
 	if err != nil {
 		return err
@@ -75,7 +77,11 @@ func animate(ctx context.Context, addr byte, brightness float64, frame time.Dura
 	ticker := time.NewTicker(frame)
 	defer ticker.Stop()
 	for step := 0; ; step++ {
-		drawSpinner(grid, step)
+		if p, ok := readProgress(progressFile, time.Now()); ok {
+			drawPie(grid, p, step)
+		} else {
+			drawSpinner(grid, step)
+		}
 		if err := grid.Show(); err != nil {
 			return err
 		}

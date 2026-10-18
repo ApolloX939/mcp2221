@@ -16,6 +16,7 @@ Also in this repo:
 | [`ht16k33/`](ht16k33) | Driver for the Adafruit bicolor 8x8 LED matrix (HT16K33 backpack) |
 | [`cmd/claudematrix/`](cmd/claudematrix) | A "Claude is working" animation for that matrix |
 | [`led-matrix/`](led-matrix) | Claude Code plugin that runs `claudematrix` while Claude works |
+| [`progress-pie/`](progress-pie) | Claude Code plugin that shows a multi-part job's progress as a pie |
 
 ## Install
 
@@ -156,11 +157,66 @@ claudematrix              # until Ctrl+C
 | `-addr` | `0x70` | I2C address of the matrix |
 | `-frame` | `120ms` | Time per animation step |
 | `-heartbeat` | off | Print a line this often, and stop if output is closed |
+| `-progress` | `~/.claude/progress-pie` | Progress file to draw a pie from (see [progress-pie](#progress-pie-a-progress-pie-for-multi-part-jobs)); `""` for the spinner only |
 
 It blanks the display and exits on SIGTERM or Ctrl+C, when the program that
 started it exits, or, with `-heartbeat`, when nothing reads its output any
 more. The plugin uses `-heartbeat 500ms` because Claude Code only stops a
 child after the child's next line of output.
+
+## progress-pie: a progress pie for multi-part jobs
+
+When Claude works on a request with several parts, the `progress-pie` plugin
+shows how far along it is as a pie, filled clockwise from 12 o'clock: empty at
+the start, half filled at 50%, full when done.
+
+- **Status line:** `◔ 1/4 running tests` (`○ ◔ ◑ ◕ ●`).
+- **LED matrix:** `claudematrix` draws the pie in place of the spinner. Green
+  is finished, the blinking orange wedge is the part being worked on, and the
+  red rim outlines what is left. At 2 of 4 (`G` green, `O` orange, `R` red):
+
+```
+··RRGG··
+·R··GGG·
+R···GGGG
+R···GGGG
+OOOOGGGG
+OOOOGGGG
+·OOOGGG·
+··OOGG··
+```
+
+Progress comes from a `progress` tool the plugin gives Claude (Claude is told
+to report each part as it finishes), or from Claude's task list when it keeps
+one. The plugin writes it to `~/.claude/progress-pie` as `done total
+unix-seconds`, and `claudematrix` checks that file every frame.
+
+### How it behaves
+
+- **While Claude works:** the `led-matrix` plugin's `claudematrix` draws the
+  pie instead of the spinner.
+- **Between turns, with the job unfinished** (Claude is waiting on background
+  work): this plugin runs `claudematrix` itself so the pie stays up. When the
+  background work wakes Claude, the matrix is handed back to `led-matrix`.
+- **The job finishes, or you press Esc:** the pie is cleared when the turn ends.
+- A progress file older than 6 hours is ignored, so an abandoned job doesn't
+  leave a pie up forever.
+
+### Install
+
+Install `claudematrix` and add the marketplace as for `led-matrix` above, then:
+
+```sh
+claude plugin install progress-pie@mcp2221 --scope user
+```
+
+Settings, in `/plugin configure progress-pie@mcp2221`:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `binary` | `/home/apollo/go/bin/claudematrix` | Path to `claudematrix`. Empty: status line only. |
+| `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
+| `progressFile` | `/home/apollo/.claude/progress-pie` | Where progress is written. `claudematrix` reads `~/.claude/progress-pie` unless given `-progress`. |
 
 ## Linux permissions
 

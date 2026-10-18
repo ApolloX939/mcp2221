@@ -1,0 +1,29 @@
+{
+  "name": "progress-pie",
+  "version": "0.1.0",
+  "description": "Shows a pie of a multi-part job's progress in the status line and on the MCP2221 + HT16K33 LED matrix, including while background work runs.",
+  "author": {
+    "name": "David",
+    "email": "ApolloX939@users.noreply.github.com"
+  },
+  "userConfig": {
+    "binary": {
+      "type": "string",
+      "title": "claudematrix program",
+      "description": "Path to the claudematrix program that draws the pie on the matrix between turns. Empty turns the matrix off for this plugin.",
+      "default": "/home/apollo/go/bin/claudematrix"
+    },
+    "brightness": {
+      "type": "number",
+      "title": "Brightness",
+      "description": "Matrix brightness, from 0.0 to 1.0.",
+      "default": 0.1
+    },
+    "progressFile": {
+      "type": "string",
+      "title": "Progress file",
+      "description": "Where progress is written for claudematrix to read. claudematrix reads ~/.claude/progress-pie unless given -progress.",
+      "default": "/home/apollo/.claude/progress-pie"
+    }
+  }
+}

@@ -10,6 +10,11 @@
       "name": "led-matrix",
       "source": "./led-matrix",
       "description": "Plays a working animation on an MCP2221 + HT16K33 LED matrix while Claude works, and blanks it when Claude is done."
+    },
+    {
+      "name": "progress-pie",
+      "source": "./progress-pie",
+      "description": "Shows a pie of a multi-part job's progress in the status line and on the MCP2221 + HT16K33 LED matrix, including while background work runs."
     }
   ]
 }
