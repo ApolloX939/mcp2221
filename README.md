@@ -18,6 +18,7 @@ Also in this repo:
 | Path | What it is |
 |------|------------|
 | [`ft232h/`](ft232h) | I2C through an FTDI FT232H (Linux only) |
+| [`shtc3/`](shtc3) | Driver for the Adafruit SHTC3 temperature and humidity sensor |
 | [`ht16k33/`](ht16k33) | Driver for the Adafruit bicolor 8x8 LED matrix (HT16K33 backpack) |
 | [`cmd/claudematrix/`](cmd/claudematrix) | A "Claude is working" animation for that matrix |
 | [`led-matrix/`](led-matrix) | Claude Code plugin that runs `claudematrix` while Claude works |
@@ -63,6 +64,65 @@ grid.Set(x, y, ht16k33.Green)                        // Off, Red, Green, Orange
 grid.Fill(ht16k33.Off)
 err = grid.Show()                                    // send the buffered pixels
 ```
+
+### Temperature and humidity (shtc3)
+
+```go
+import "github.com/ApolloX939/mcp2221/shtc3"
+
+sensor, err := shtc3.New(dev)  // any adapter; checks the sensor's ID
+r, err := sensor.Read()        // about 13 ms; the sensor sleeps between reads
+fmt.Printf("%.1f °C (%.1f °F), %.1f %%RH\n", r.Celsius, r.Fahrenheit(), r.Humidity)
+sensor.LowPower = true         // about 1 ms per read, less precise
+```
+
+The sensor sleeps between reads, and `Scan` doesn't find it while it is
+asleep. `shtc3.New` is the way to check that it is there.
+
+The SHTC3's address is fixed at 0x70, the same as the LED matrix's default,
+so the two clash on one bus. See [I2C addresses](#i2c-addresses).
+
+### I2C addresses
+
+Every device on an I2C bus needs its own 7-bit address. Two devices at the same
+address answer together and corrupt each other's data, with no error to warn you.
+
+| Device | Default | Can it change? |
+|--------|---------|----------------|
+| [HT16K33 LED matrix backpack](https://www.adafruit.com/product/902) | 0x70 | Yes, 0x70-0x77, with solder jumpers |
+| [SHTC3 sensor](https://www.adafruit.com/product/4636) | 0x70 | No, always 0x70 |
+
+The MCP2221 and FT232H are the bus itself, not devices on it, so they have no
+address.
+
+**Using the matrix and the SHTC3 together:** leave the sensor at 0x70 and move
+the matrix. The backpack has three solder jumpers on the back, A0, A1 and A2.
+Bridging a jumper with a blob of solder adds 1, 2 or 4 to the address:
+
+| Bridged | Address |
+|---------|---------|
+| none | 0x70 |
+| A0 | 0x71 |
+| A1 | 0x72 |
+| A0 + A1 | 0x73 |
+| A2 | 0x74 |
+| A0 + A2 | 0x75 |
+| A1 + A2 | 0x76 |
+| A0 + A1 + A2 | 0x77 |
+
+Adafruit's guide has photos: [Changing I2C address](https://learn.adafruit.com/adafruit-led-backpack/changing-i2c-address).
+To undo it, remove the solder with a solder sucker or wick.
+
+After moving the matrix, use its new address everywhere:
+
+- In Go: `ht16k33.NewMatrix8x8x2(dev, 0x71, 0.1)`.
+- By hand: `claudematrix -addr 0x71`.
+- The `led-matrix` plugin always uses 0x70 and has no address setting yet, so
+  it won't find a moved matrix.
+
+To check what is on the bus, run `Scan`. It lists the matrix, but not an SHTC3,
+which ignores the probe while it sleeps between readings. `shtc3.New` checks
+for the sensor instead.
 
 ### Notes
 
@@ -333,6 +393,9 @@ FT232H, on Linux with an Adafruit FT232H breakout and the same matrix:
 - A second program opening the adapter gets `ErrInUse`.
 - The serial port comes back after `Close`.
 - claudematrix runs and stops cleanly.
+
+SHTC3, on the FT232H:
+- ID check, then normal and low-power readings with valid checksums.
 
 claudematrix and the plugin:
 - Animation start and stop in a live session and a fresh headless session.
