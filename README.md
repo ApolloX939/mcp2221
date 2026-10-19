@@ -117,8 +117,13 @@ After moving the matrix, use its new address everywhere:
 
 - In Go: `ht16k33.NewMatrix8x8x2(dev, 0x71, 0.1)`.
 - By hand: `claudematrix -addr 0x71`.
-- The `led-matrix` plugin always uses 0x70 and has no address setting yet, so
-  it won't find a moved matrix.
+- In the `led-matrix` and `progress-pie` plugins: set their `addr` option, with
+  `/plugin configure led-matrix@mcp2221` in Claude Code, or from a shell:
+
+  ```sh
+  echo '{"addr":"0x71"}' | claude plugin configure led-matrix@mcp2221 --values-stdin
+  echo '{"addr":"0x71"}' | claude plugin configure progress-pie@mcp2221 --values-stdin
+  ```
 
 To check what is on the bus, run `Scan`. It lists the matrix, but not an SHTC3,
 which ignores the probe while it sleeps between readings. `shtc3.New` checks
@@ -222,6 +227,7 @@ Then start a new session, or run `/reload-plugins` in an open one.
 |---------|---------|-------------|
 | `binary` | `/home/apollo/go/bin/claudematrix` | Path to `claudematrix`. Change it if yours is elsewhere. |
 | `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
+| `addr` | `0x70` | I2C address of the matrix, 0x70 to 0x77 (see [I2C addresses](#i2c-addresses)) |
 | `limitFile` | `/home/apollo/.claude/usage-limit` | Where the usage limit's reset time is written. `claudematrix` reads `~/.claude/usage-limit` unless given `-limit`. |
 
 ### How it behaves
@@ -348,6 +354,7 @@ Settings, in `/plugin configure progress-pie@mcp2221`:
 | `enabled` | `true` | Off: no progress tool, no status line entry, nothing on the matrix |
 | `binary` | `/home/apollo/go/bin/claudematrix` | Path to `claudematrix`. Empty: status line only. |
 | `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
+| `addr` | `0x70` | I2C address of the matrix, 0x70 to 0x77 (see [I2C addresses](#i2c-addresses)) |
 | `progressFile` | `/home/apollo/.claude/progress-pie` | Where progress is written. `claudematrix` reads `~/.claude/progress-pie` unless given `-progress`. |
 
 ## Linux permissions

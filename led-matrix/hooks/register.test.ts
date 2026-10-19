@@ -76,7 +76,7 @@ test('starts the animation when a turn starts and stops it when the turn ends', 
   await settle()
   expect(matrix.started.length).toBe(1)
   expect(matrix.started[0]).toEqual([
-    '/home/apollo/go/bin/claudematrix', '-brightness', '0.1', '-heartbeat', '500ms', '-progress', '', '-limit', '',
+    '/home/apollo/go/bin/claudematrix', '-brightness', '0.1', '-addr', '0x70', '-heartbeat', '500ms', '-progress', '', '-limit', '',
   ])
 
   await $.turn.complete(complete('t1'))
@@ -110,12 +110,12 @@ test('a new turn replaces a running animation instead of adding one', async ($, 
   expect(matrix.stopped()).toBe(1)
 })
 
-test('passes the configured program and brightness', { options: { binary: '/opt/cm', brightness: 0.5 } }, async ($, on) => {
+test('passes the configured program, brightness and address', { options: { binary: '/opt/cm', brightness: 0.5, addr: '0x71' } }, async ($, on) => {
   const matrix = fakeMatrix(on)
 
   await $.turn.start({ text: 'hello', turnId: 't1' })
   await settle()
-  expect(matrix.started[0]).toEqual(['/opt/cm', '-brightness', '0.5', '-heartbeat', '500ms', '-progress', '', '-limit', ''])
+  expect(matrix.started[0]).toEqual(['/opt/cm', '-brightness', '0.5', '-addr', '0x71', '-heartbeat', '500ms', '-progress', '', '-limit', ''])
 })
 
 test('the limit that is hit is the one whose reset counts', async () => {
@@ -133,7 +133,7 @@ test('hitting the limit writes the reset and counts down between turns', async (
   await settle()
   expect(matrix.writes.at(-1)).toBe(`${(NOW + 2 * HOUR) / 1000}\n`)
   expect(matrix.started.at(-1)).toEqual([
-    '/home/apollo/go/bin/claudematrix', '-brightness', '0.1', '-heartbeat', '500ms',
+    '/home/apollo/go/bin/claudematrix', '-brightness', '0.1', '-addr', '0x70', '-heartbeat', '500ms',
     '-countdown', '-limit', '/home/apollo/.claude/usage-limit',
   ])
 

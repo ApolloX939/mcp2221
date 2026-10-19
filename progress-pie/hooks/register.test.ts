@@ -79,7 +79,7 @@ test('between turns an unfinished job keeps the pie on the matrix', async ($, on
   await settle()
   expect(f.started.length).toBe(1)
   expect(f.started[0]).toEqual([
-    '/home/apollo/go/bin/claudematrix', '-brightness', '0.1', '-heartbeat', '500ms',
+    '/home/apollo/go/bin/claudematrix', '-brightness', '0.1', '-addr', '0x70', '-heartbeat', '500ms',
     '-progress', '/home/apollo/.claude/progress-pie',
   ])
 

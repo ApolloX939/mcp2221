@@ -53,7 +53,7 @@ function spawn($: EngineInterface, options: PluginOptions, kind: Animation['kind
   // -heartbeat makes claudematrix print a line every half second, so the
   // loop below wakes up regularly and can notice it has been asked to stop.
   const child = $.process.spawn({
-    argv: [binary, '-brightness', String(options.brightness), '-heartbeat', '500ms', ...flags],
+    argv: [binary, '-brightness', String(options.brightness), '-addr', String(options.addr), '-heartbeat', '500ms', ...flags],
   })
   let isStopped = false
   const animation: Animation = {
