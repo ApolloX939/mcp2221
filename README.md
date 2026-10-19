@@ -130,9 +130,9 @@ Then start a new session, or run `/reload-plugins` in an open one.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `enabled` | `true` | Off: no progress tool, no status line entry, nothing on the matrix |
 | `binary` | `/home/apollo/go/bin/claudematrix` | Path to `claudematrix`. Change it if yours is elsewhere. |
 | `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
+| `limitFile` | `/home/apollo/.claude/usage-limit` | Where the usage limit's reset time is written. `claudematrix` reads `~/.claude/usage-limit` unless given `-limit`. |
 
 ### How it behaves
 
@@ -145,6 +145,41 @@ Then start a new session, or run `/reload-plugins` in an open one.
   retrying quietly. Its errors go to Claude Code's debug log (`claude --debug`).
 - **Claude Code exits or crashes:** `claudematrix` notices within a second,
   blanks the display and exits.
+- **A usage limit is hit** (a window such as the five-hour session limit at
+  100%): between turns the matrix counts down to when the limit resets, then
+  blanks. See [Usage-limit countdown](#usage-limit-countdown).
+
+### Usage-limit countdown
+
+Claude Code reports how much of each usage window is used and when it resets.
+When one reaches 100%, the plugin writes the reset time to
+`~/.claude/usage-limit` (unix seconds; `0` when nothing is limited), and
+between turns runs `claudematrix -countdown`, which shows the time left and
+exits at the reset. Starting a new prompt hands the matrix back to the working
+light.
+
+The big number's colour gives its unit, and a dot at its lower right blinks
+once a second:
+
+- **Under 5 hours:** an orange dot along the top for each whole hour, and the
+  minutes in red. 3 hours 42 minutes (`O` orange, `R` red):
+
+```
+O·O·O···
+········
+R·R·RRR·
+R·R···R·
+RRR·RRR·
+··R·R···
+··R·RRRR
+········
+```
+
+- **5 to 99 hours:** the hours in orange.
+- **100 hours or more** (the weekly limit): the days in green.
+
+The progress pie's display shows the countdown too, ahead of the pie, so the
+two plugins never fight over what the matrix shows.
 
 ### Running it by hand
 
@@ -158,12 +193,14 @@ claudematrix              # until Ctrl+C
 | `-addr` | `0x70` | I2C address of the matrix |
 | `-frame` | `120ms` | Time per animation step |
 | `-heartbeat` | off | Print a line this often, and stop if output is closed |
-| `-progress` | `~/.claude/progress-pie` | Progress file to draw a pie from (see [progress-pie](#progress-pie-a-progress-pie-for-multi-part-jobs)); `""` for the spinner only |
+| `-progress` | `~/.claude/progress-pie` | Progress file to draw a pie from (see [progress-pie](#progress-pie-a-progress-pie-for-multi-part-jobs)); `""` for no pie |
+| `-limit` | `~/.claude/usage-limit` | Usage-limit file to count down from (see [Usage-limit countdown](#usage-limit-countdown)); `""` for no countdown |
+| `-countdown` | off | Show only the countdown, and exit when no limit is hit |
 
 It blanks the display and exits on SIGTERM or Ctrl+C, when the program that
 started it exits, or, with `-heartbeat`, when nothing reads its output any
-more. The `led-matrix` plugin runs it with `-progress ""`, so the working
-light always wins over a progress pie, and with `-heartbeat 500ms` because
+more. While Claude works, the `led-matrix` plugin runs it with `-progress ""
+-limit ""`, so the working light always wins over a pie or a countdown, and with `-heartbeat 500ms` because
 Claude Code only stops a child after the child's next line of output.
 
 ## progress-pie: a progress pie for multi-part jobs

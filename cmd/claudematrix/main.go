@@ -1,6 +1,8 @@
 // claudematrix plays a "working" animation on the LED matrix until it is
 // stopped, then blanks the display. While a multi-part job is in progress
-// (see -progress) it draws a progress pie instead.
+// (see -progress) it draws a progress pie instead, and while the usage limit
+// is hit (see -limit) a countdown to when it resets. With -countdown it shows
+// only the countdown, and exits once the limit resets.
 //
 // The led-matrix Claude Code mod (led-matrix/ in this repo) starts it when Claude starts working and
 // stops it (SIGTERM) when Claude is done. It also stops if the program that
@@ -26,7 +28,9 @@ func main() {
 	addr := flag.Uint("addr", 0x70, "I2C address of the matrix")
 	frame := flag.Duration("frame", 120*time.Millisecond, "time per animation step")
 	heartbeat := flag.Duration("heartbeat", 0, "print a line this often, and stop when output is closed (0 = off)")
-	progressFile := flag.String("progress", defaultProgressFile(), "file the progress-pie plugin writes; \"\" = spinner only")
+	progressFile := flag.String("progress", defaultProgressFile(), "file the progress-pie plugin writes; \"\" = no pie")
+	limitFile := flag.String("limit", defaultLimitFile(), "file the led-matrix plugin writes the usage limit's reset time to; \"\" = no countdown")
+	countdown := flag.Bool("countdown", false, "show only the countdown to the usage limit's reset, and exit when there is none")
 	flag.Parse()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
@@ -43,9 +47,18 @@ func main() {
 
 	// Keep trying while the adapter is unplugged or another program
 	// (such as statmatrix) has it open.
+	if *countdown {
+		*progressFile = ""
+	}
+	show := shows{progress: *progressFile, limit: *limitFile, countdownOnly: *countdown}
 	lastErr := ""
 	for ctx.Err() == nil {
-		err := animate(ctx, byte(*addr), *brightness, *frame, *progressFile)
+		if *countdown {
+			if _, ok := readLimit(*limitFile, time.Now()); !ok {
+				return
+			}
+		}
+		err := animate(ctx, byte(*addr), *brightness, *frame, show)
 		if err != nil && err.Error() != lastErr {
 			fmt.Fprintln(os.Stderr, "claudematrix:", err)
 			lastErr = err.Error()
@@ -57,8 +70,17 @@ func main() {
 	}
 }
 
-// animate runs the animation until ctx ends, then blanks the display.
-func animate(ctx context.Context, addr byte, brightness float64, frame time.Duration, progressFile string) error {
+// shows says what animate draws besides the spinner.
+type shows struct {
+	progress      string // progress file for the pie; "" = none
+	limit         string // usage-limit file for the countdown; "" = none
+	countdownOnly bool   // only the countdown; stop when there is none
+}
+
+// animate runs the animation until ctx ends (or, countdown only, until the
+// limit resets), then blanks the display. The countdown comes before the
+// pie, and the pie before the spinner.
+func animate(ctx context.Context, addr byte, brightness float64, frame time.Duration, show shows) error {
 	bus, err := mcp2221.Open()
 	if err != nil {
 		return err
@@ -77,7 +99,12 @@ func animate(ctx context.Context, addr byte, brightness float64, frame time.Dura
 	ticker := time.NewTicker(frame)
 	defer ticker.Stop()
 	for step := 0; ; step++ {
-		if p, ok := readProgress(progressFile, time.Now()); ok {
+		now := time.Now()
+		if left, ok := readLimit(show.limit, now); ok {
+			drawClock(grid, left, now)
+		} else if show.countdownOnly {
+			return nil
+		} else if p, ok := readProgress(show.progress, now); ok {
 			drawPie(grid, p, step)
 		} else {
 			drawSpinner(grid, step)

@@ -9,7 +9,7 @@
     {
       "name": "led-matrix",
       "source": "./led-matrix",
-      "description": "Plays a working animation on an MCP2221 + HT16K33 LED matrix while Claude works, and blanks it when Claude is done."
+      "description": "Plays a working animation on an MCP2221 + HT16K33 LED matrix while Claude works, blanks it when Claude is done, and counts down to the reset while the usage limit is hit."
     },
     {
       "name": "progress-pie",
