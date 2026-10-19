@@ -12,6 +12,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -19,7 +20,10 @@ import (
 	"syscall"
 	"time"
 
+	"rafaelmartins.com/p/usbhid"
+
 	mcp2221 "github.com/ApolloX939/mcp2221"
+	"github.com/ApolloX939/mcp2221/ft232h"
 	"github.com/ApolloX939/mcp2221/ht16k33"
 )
 
@@ -70,6 +74,31 @@ func main() {
 	}
 }
 
+// bus is an open I2C adapter.
+type bus interface {
+	I2CWrite(addr byte, data []byte) error
+	Close() error
+}
+
+// openBus opens an MCP2221, or an FT232H if no MCP2221 is attached.
+func openBus() (bus, error) {
+	m, err := mcp2221.Open()
+	if err == nil {
+		return m, nil
+	}
+	if !errors.Is(err, usbhid.ErrNoDeviceFound) {
+		return nil, err
+	}
+	f, ferr := ft232h.Open()
+	if ferr == nil {
+		return f, nil
+	}
+	if errors.Is(ferr, ft232h.ErrNoDevice) {
+		return nil, errors.New("no MCP2221 or FT232H adapter found")
+	}
+	return nil, ferr
+}
+
 // shows says what animate draws besides the spinner.
 type shows struct {
 	progress      string // progress file for the pie; "" = none
@@ -81,7 +110,7 @@ type shows struct {
 // limit resets), then blanks the display. The countdown comes before the
 // pie, and the pie before the spinner.
 func animate(ctx context.Context, addr byte, brightness float64, frame time.Duration, show shows) error {
-	bus, err := mcp2221.Open()
+	bus, err := openBus()
 	if err != nil {
 		return err
 	}

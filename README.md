@@ -9,10 +9,15 @@ A Go library for the Microchip **MCP2221 / MCP2221A** USB-to-I2C bridge
 
 GPIO, ADC/DAC and UART are not implemented.
 
+The [`ft232h`](ft232h) package drives the FTDI **FT232H** (for example the
+[Adafruit FT232H breakout](https://www.adafruit.com/product/2264)) with the same
+I2C methods. It is pure Go too, but Linux only. See [FT232H](#ft232h).
+
 Also in this repo:
 
 | Path | What it is |
 |------|------------|
+| [`ft232h/`](ft232h) | I2C through an FTDI FT232H (Linux only) |
 | [`ht16k33/`](ht16k33) | Driver for the Adafruit bicolor 8x8 LED matrix (HT16K33 backpack) |
 | [`cmd/claudematrix/`](cmd/claudematrix) | A "Claude is working" animation for that matrix |
 | [`led-matrix/`](led-matrix) | Claude Code plugin that runs `claudematrix` while Claude works |
@@ -68,6 +73,29 @@ err = grid.Show()                                    // send the buffered pixels
 - `Scan` probes 0x08–0x77 with a one-byte read.
 - Transfers are up to 65535 bytes each and time out after 250 ms.
 
+### FT232H
+
+```go
+import "github.com/ApolloX939/mcp2221/ft232h"
+
+dev, err := ft232h.Open() // also sets the bus to 100 kHz
+defer dev.Close()
+// Scan, I2CWrite, I2CRead, I2CTx and SetI2CSpeed (1 kHz to 1 MHz) work as above.
+if errors.Is(err, ft232h.ErrNACK) { /* nothing at that address */ }
+```
+
+- **Wiring:** D0 is SCL, and D1 and D2 together are SDA. On the Adafruit board,
+  turn the I2C switch on (it ties D1 to D2). Older boards without the switch
+  need a wire from D1 to D2.
+- The FT232H isn't a HID device, so the package uses Linux's raw USB device
+  files (usbfs). On Windows and macOS, `Open` returns an error.
+- While the FT232H is open, its serial port (`/dev/ttyUSB*`) disappears.
+  `Close` brings it back.
+- `I2CTx` uses a repeated start between the write and the read. The HT16K33
+  matrix returns scrambled data for a multi-byte read after a repeated start
+  (single bytes are fine), so read it with `I2CWrite` then `I2CRead`.
+- Also needs a udev rule; see [Linux permissions](#linux-permissions).
+
 ## claudematrix: a "Claude is working" light
 
 `claudematrix` plays Claude Code's spinner on the LED matrix until it is stopped,
@@ -92,6 +120,8 @@ frame 0     frame 1     frame 2     frame 3     frame 4     frame 5
 ```
 
 See it running on the matrix: [claude-ing.mp4](claude-ing.mp4) (silent video).
+
+It uses an MCP2221 if one is plugged in, and otherwise an FT232H.
 
 ### Install
 
@@ -276,7 +306,16 @@ The rule must match `SUBSYSTEM=="hidraw"`. A rule matching `SUBSYSTEM=="usb"`
 (common for libusb-based tools such as Blinka) doesn't cover the HID device this
 library uses.
 
-Windows and macOS need no setup.
+For the FT232H, create `/etc/udev/rules.d/99-ft232h.rules`:
+
+```
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+```
+
+This one matches `SUBSYSTEM=="usb"`, because the FT232H is driven through its
+raw USB device file.
+
+Windows and macOS need no setup for the MCP2221.
 
 ## Tested
 
@@ -286,6 +325,14 @@ Tested on Linux with an MCP2221A and an HT16K33 LED matrix backpack. Library:
 - No-device errors on writes and reads.
 - Recovery after errors.
 - 100 kHz and 400 kHz.
+
+FT232H, on Linux with an Adafruit FT232H breakout and the same matrix:
+- Bus scan at 100 kHz and 400 kHz.
+- Write, then read back (one byte, and many bytes without a repeated start).
+- No-device errors.
+- A second program opening the adapter gets `ErrInUse`.
+- The serial port comes back after `Close`.
+- claudematrix runs and stops cleanly.
 
 claudematrix and the plugin:
 - Animation start and stop in a live session and a fresh headless session.
