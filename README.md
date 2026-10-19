@@ -175,8 +175,9 @@ RRR·RRR·
 ········
 ```
 
-- **5 to 99 hours:** the hours in orange.
-- **100 hours or more** (the weekly limit): the days in green.
+- **5 to 99 hours:** the hours in orange (a single digit is centred).
+- **100 hours or more** (the weekly limit): the days in green (a single digit
+  is centred).
 
 The progress pie's display shows the countdown too, ahead of the pie, so the
 two plugins never fight over what the matrix shows.

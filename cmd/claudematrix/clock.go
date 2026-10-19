@@ -100,8 +100,13 @@ func drawClock(grid *ht16k33.Matrix8x8x2, left time.Duration, now time.Time) {
 	for i := range face.dots {
 		grid.Set(2*i, 0, ht16k33.Orange)
 	}
-	drawDigit(grid, face.number/10, 0, 2, face.unit)
-	drawDigit(grid, face.number%10, 4, 2, face.unit)
+	if face.number < 10 && face.unit != unitMinutes {
+		// One digit of hours or days, centred.
+		drawDigit(grid, face.number, 2, 2, face.unit)
+	} else {
+		drawDigit(grid, face.number/10, 0, 2, face.unit)
+		drawDigit(grid, face.number%10, 4, 2, face.unit)
+	}
 	if now.Nanosecond() < int(500*time.Millisecond) {
 		grid.Set(7, 6, face.unit)
 	}
