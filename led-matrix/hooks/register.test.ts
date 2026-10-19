@@ -54,7 +54,7 @@ test('starts the animation when a turn starts and stops it when the turn ends', 
   await settle()
   expect(matrix.started.length).toBe(1)
   expect(matrix.started[0]).toEqual([
-    '/home/apollo/go/bin/claudematrix', '-brightness', '0.1', '-heartbeat', '500ms',
+    '/home/apollo/go/bin/claudematrix', '-brightness', '0.1', '-heartbeat', '500ms', '-progress', '',
   ])
 
   await $.turn.complete(complete('t1'))
@@ -93,5 +93,5 @@ test('passes the configured program and brightness', { options: { binary: '/opt/
 
   await $.turn.start({ text: 'hello', turnId: 't1' })
   await settle()
-  expect(matrix.started[0]).toEqual(['/opt/cm', '-brightness', '0.5', '-heartbeat', '500ms'])
+  expect(matrix.started[0]).toEqual(['/opt/cm', '-brightness', '0.5', '-heartbeat', '500ms', '-progress', ''])
 })

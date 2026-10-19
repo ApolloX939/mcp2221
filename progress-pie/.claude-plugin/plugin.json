@@ -7,6 +7,12 @@
     "email": "ApolloX939@users.noreply.github.com"
   },
   "userConfig": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Show the progress pie. Off: no progress tool, no status line entry, nothing on the matrix.",
+      "default": true
+    },
     "binary": {
       "type": "string",
       "title": "claudematrix program",

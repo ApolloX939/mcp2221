@@ -134,3 +134,18 @@ test('a todo list drives the pie', async ($, on) => {
   expect(f.writes.at(-1)).toBe('1 3 1700000000\n')
   expect(f.statuses.at(-1)).toBe('◔ 1/3 Doing b')
 })
+
+test('turned off, there is no progress tool and nothing is shown', { options: { enabled: false } }, async ($, on) => {
+  const f = fakes(on)
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('tool.call', { tool: 'mcp__progress-pie__progress' }, () => ({ deny: 'no such tool' }))
+  await $.session.start({ cwd: '/tmp', surface: 'terminal', isInteractive: true })
+  await $.turn.start({ text: 'go', turnId: 't1' })
+  const ran = await progress($, 1, 4)
+  await $.turn.complete(complete('t1'))
+  await settle()
+  expect(ran.deny).toBe('no such tool')
+  expect(f.writes.length).toBe(0)
+  expect(f.started.length).toBe(0)
+  expect(f.statuses.every(s => s === undefined)).toBe(true)
+})

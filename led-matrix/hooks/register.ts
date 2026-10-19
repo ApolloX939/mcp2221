@@ -3,6 +3,9 @@ import type { EngineInterface, PluginOptions, Register } from 'claude-code'
 // Runs claudematrix (cmd/claudematrix in this repo) for as long as Claude is
 // working on a prompt. claudematrix animates the LED matrix and blanks it
 // when it is stopped, so stopping the child is all "clear" takes.
+//
+// While Claude works the matrix always shows the working light, never the
+// progress-pie plugin's pie: that pie is in the status line already.
 
 type Animation = { stop: () => void }
 
@@ -28,8 +31,9 @@ function startAnimation($: EngineInterface, options: PluginOptions) {
   const binary = String(options.binary)
   // -heartbeat makes claudematrix print a line every half second, so the
   // loop below wakes up regularly and can notice it has been asked to stop.
+  // -progress "" keeps it on the spinner instead of drawing a progress pie.
   const child = $.process.spawn({
-    argv: [binary, '-brightness', String(options.brightness), '-heartbeat', '500ms'],
+    argv: [binary, '-brightness', String(options.brightness), '-heartbeat', '500ms', '-progress', ''],
   })
   let isStopped = false
   const animation: Animation = {

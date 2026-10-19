@@ -6,10 +6,12 @@ import type { EngineInterface, PluginOptions, Register } from 'claude-code'
 // Progress comes from the `progress` tool this plugin gives the model, and
 // from the built-in task tools (TodoWrite, TaskCreate/TaskUpdate) when the
 // model uses those. It is written to a file as "done total unix-seconds".
-// While Claude works, the led-matrix plugin's claudematrix reads that file
-// and draws the pie in place of its spinner. Between turns, while the job is
-// unfinished (background work is running), this plugin runs claudematrix
-// itself so the pie stays up.
+// While Claude works, the matrix belongs to the led-matrix plugin's working
+// light and the pie is in the status line only. Between turns, while the job
+// is unfinished (background work is running), this plugin runs claudematrix
+// itself so the pie shows on the matrix.
+//
+// The `enabled` setting turns all of it off.
 
 const TOOL = 'progress'
 
@@ -116,7 +118,16 @@ const GUIDANCE = `# Progress pie
 When a request has several distinct parts (steps, files, checks, items), report progress with the \`mcp__progress-pie__${TOOL}\` tool so the person can see it as a pie: call it with done=0 and the number of parts when you start, again each time a part is finished, and with done=total when everything is done. Keep calling it while background work (background shells, agents) finishes parts between turns. If the plan changes, call it with the new total. If you abandon the job, call it with total=0 to clear the pie. Skip it for single-step requests. You don't need it when you are already tracking the work with a task list tool; the pie follows that list.`
 
 export const register: Register = (on, options) => {
+  // Turned off, every hook passes straight through. Changing the setting
+  // reloads this module, so session.start clears a status an earlier load
+  // left up.
+  const isOff = options.enabled === false
+
   on('session.start', async ($, e, next) => {
+    if (isOff) {
+      $.ui.status(undefined)
+      return next(e)
+    }
     await $.tool.register({
       name: TOOL,
       description:
@@ -138,12 +149,14 @@ export const register: Register = (on, options) => {
 
   on('prompt.compose', async ($, e, next) => {
     const composed = await next(e)
+    if (isOff) return composed
     return {
       sections: [...composed.sections, { id: 'progress-pie:guidance', text: GUIDANCE, scope: 'session' as const }],
     }
   })
 
-  on('tool.call', { tool: 'mcp__progress-pie__progress' }, async ($, e) => {
+  on('tool.call', { tool: 'mcp__progress-pie__progress' }, async ($, e, next) => {
+    if (isOff) return next(e)
     const input = e as unknown as { done?: unknown; total?: unknown; label?: unknown }
     const total = Math.floor(Number(input.total))
     const done = Math.floor(Number(input.done))
@@ -160,6 +173,7 @@ export const register: Register = (on, options) => {
   }).catch(() => ({ deny: 'progress-pie failed to record that.' }))
 
   on('tool.call', { tool: 'TodoWrite' }, async ($, e, next) => {
+    if (isOff) return next(e)
     const ran = await next(e)
     if (ran.deny === undefined && ran.isError !== true && e.todos.length >= 2) {
       const done = e.todos.filter(t => t.status === 'completed').length
@@ -170,6 +184,7 @@ export const register: Register = (on, options) => {
   }).catch(($, e, next) => next(e)) // tracking failed: run the tool untouched
 
   on('tool.call', { tool: 'TaskCreate' }, async ($, e, next) => {
+    if (isOff) return next(e)
     const ran = await next(e)
     if (ran.deny === undefined && ran.isError !== true && ran.result?.task?.id) {
       tasks.set(ran.result.task.id, 'pending')
@@ -180,6 +195,7 @@ export const register: Register = (on, options) => {
   }).catch(($, e, next) => next(e)) // tracking failed: run the tool untouched
 
   on('tool.call', { tool: 'TaskUpdate' }, async ($, e, next) => {
+    if (isOff) return next(e)
     const ran = await next(e)
     if (ran.deny === undefined && ran.isError !== true && e.status !== undefined && tasks.has(e.taskId)) {
       if (e.status === 'deleted') tasks.delete(e.taskId)
@@ -192,14 +208,16 @@ export const register: Register = (on, options) => {
 
   // Main conversation only: a subagent's turns run inside the main turn.
   on('turn.start', ($, e, next) => {
+    if (isOff) return next(e)
     if (e.agentId === undefined) {
       isTurnRunning = true
-      stopDisplay() // led-matrix's claudematrix takes over the matrix
+      stopDisplay() // the matrix goes back to led-matrix's working light
     }
     return next(e)
   })
 
   on('turn.complete', async ($, e, next) => {
+    if (isOff) return next(e)
     if (e.agentId === undefined) {
       isTurnRunning = false
       // Interrupted (Esc), or finished: clear the pie. Otherwise the job is
@@ -215,6 +233,7 @@ export const register: Register = (on, options) => {
   })
 
   on('session.end', async ($, e, next) => {
+    if (isOff) return next(e)
     stopDisplay()
     if (job) await setJob($, options, undefined)
     return next(e)

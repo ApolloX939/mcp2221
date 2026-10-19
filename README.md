@@ -130,6 +130,7 @@ Then start a new session, or run `/reload-plugins` in an open one.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
+| `enabled` | `true` | Off: no progress tool, no status line entry, nothing on the matrix |
 | `binary` | `/home/apollo/go/bin/claudematrix` | Path to `claudematrix`. Change it if yours is elsewhere. |
 | `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
 
@@ -161,8 +162,9 @@ claudematrix              # until Ctrl+C
 
 It blanks the display and exits on SIGTERM or Ctrl+C, when the program that
 started it exits, or, with `-heartbeat`, when nothing reads its output any
-more. The plugin uses `-heartbeat 500ms` because Claude Code only stops a
-child after the child's next line of output.
+more. The `led-matrix` plugin runs it with `-progress ""`, so the working
+light always wins over a progress pie, and with `-heartbeat 500ms` because
+Claude Code only stops a child after the child's next line of output.
 
 ## progress-pie: a progress pie for multi-part jobs
 
@@ -171,7 +173,8 @@ shows how far along it is as a pie, filled clockwise from 12 o'clock: empty at
 the start, half filled at 50%, full when done.
 
 - **Status line:** `◔ 1/4 running tests` (`○ ◔ ◑ ◕ ●`).
-- **LED matrix:** `claudematrix` draws the pie in place of the spinner. Green
+- **LED matrix:** between turns, while background work runs, `claudematrix`
+  draws the pie (while Claude works, the matrix keeps the working light). Green
   is finished, the blinking orange wedge is the part being worked on, and the
   red rim outlines what is left. At 2 of 4 (`G` green, `O` orange, `R` red):
 
@@ -193,10 +196,10 @@ unix-seconds`, and `claudematrix` checks that file every frame.
 
 ### How it behaves
 
-- **While Claude works:** the `led-matrix` plugin's `claudematrix` draws the
-  pie instead of the spinner.
+- **While Claude works:** the working light wins: the `led-matrix` plugin keeps
+  the spinner on the matrix, and the pie is in the status line only.
 - **Between turns, with the job unfinished** (Claude is waiting on background
-  work): this plugin runs `claudematrix` itself so the pie stays up. When the
+  work): this plugin runs `claudematrix` itself to show the pie. When the
   background work wakes Claude, the matrix is handed back to `led-matrix`.
 - **The job finishes, or you press Esc:** the pie is cleared when the turn ends.
 - A progress file older than 6 hours is ignored, so an abandoned job doesn't
@@ -214,6 +217,7 @@ Settings, in `/plugin configure progress-pie@mcp2221`:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
+| `enabled` | `true` | Off: no progress tool, no status line entry, nothing on the matrix |
 | `binary` | `/home/apollo/go/bin/claudematrix` | Path to `claudematrix`. Empty: status line only. |
 | `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
 | `progressFile` | `/home/apollo/.claude/progress-pie` | Where progress is written. `claudematrix` reads `~/.claude/progress-pie` unless given `-progress`. |
