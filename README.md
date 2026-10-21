@@ -47,7 +47,8 @@ Also in this repo:
 ## Install
 
 See [INSTALL.md](INSTALL.md) for the library, `claudematrix`, the Claude Code
-plugins and the Linux permissions. The library:
+plugins and the Linux permissions, and [UNINSTALL.md](UNINSTALL.md) to remove
+them. The library:
 
 ```sh
 go get github.com/ApolloX939/mcp2221
