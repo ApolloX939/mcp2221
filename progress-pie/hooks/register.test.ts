@@ -8,6 +8,10 @@ function fakes(on: On) {
   on('turn.complete', () => ({ text: '' }))
 
   on('clock.now', () => ({ value: 1_700_000_000_000 }))
+  // A home folder with claudematrix in Go's install folder, off PATH.
+  on('env.get', (_$, e) => ({ value: e.name === 'HOME' ? '/home/test' : undefined }))
+  const installed = new Set(['/home/test/go/bin/claudematrix'])
+  on('fs.exists', (_$, e) => ({ value: installed.has(e.path) }))
   const statuses: (string | undefined)[] = []
   on('ui.status', (_$, e) => {
     statuses.push(e.text)
@@ -15,7 +19,9 @@ function fakes(on: On) {
   })
 
   const writes: string[] = []
+  const paths: string[] = []
   on('fs.write', (_$, e) => {
+    paths.push(e.path)
     writes.push(e.text)
     return { value: undefined }
   })
@@ -37,6 +43,8 @@ function fakes(on: On) {
   return {
     statuses,
     writes,
+    paths,
+    installed,
     started,
     stopped: () => stopped,
     beat: () => {
@@ -79,8 +87,8 @@ test('between turns an unfinished job keeps the pie on the matrix', async ($, on
   await settle()
   expect(f.started.length).toBe(1)
   expect(f.started[0]).toEqual([
-    '/home/apollo/go/bin/claudematrix', '-brightness', '0.1', '-addr', '0x70', '-heartbeat', '500ms',
-    '-progress', '/home/apollo/.claude/progress-pie',
+    '/home/test/go/bin/claudematrix', '-brightness', '0.1', '-addr', '0x70', '-heartbeat', '500ms',
+    '-progress', '/home/test/.claude/progress-pie',
   ])
 
   // Background work wakes Claude: the turn takes the matrix back.
@@ -148,4 +156,15 @@ test('turned off, there is no progress tool and nothing is shown', { options: { 
   expect(f.writes.length).toBe(0)
   expect(f.started.length).toBe(0)
   expect(f.statuses.every(s => s === undefined)).toBe(true)
+})
+
+test('the defaults are the program in Go\'s install folder and ~/.claude/progress-pie', async ($, on) => {
+  const f = fakes(on)
+  await $.turn.start({ text: 'go', turnId: 't1' })
+  await progress($, 1, 4)
+  await $.turn.complete(complete('t1'))
+  await settle()
+  expect(f.paths.at(-1)).toBe('/home/test/.claude/progress-pie')
+  expect(f.started.at(-1)![0]).toBe('/home/test/go/bin/claudematrix')
+  expect(f.started.at(-1)).toContain('/home/test/.claude/progress-pie')
 })

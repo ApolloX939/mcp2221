@@ -47,11 +47,14 @@ Also in this repo:
 ## Install
 
 See [INSTALL.md](INSTALL.md) for the library, `claudematrix`, the Claude Code
-plugins and the Linux permissions. In short:
+plugins and the Linux permissions. The library:
 
 ```sh
 go get github.com/ApolloX939/mcp2221
 ```
+
+The LED matrix in Claude Code takes three commands: see the
+[quick start](INSTALL.md#quick-start-the-led-matrix-in-claude-code).
 
 ## Usage
 
@@ -213,7 +216,7 @@ It uses an MCP2221 if one is plugged in, and otherwise an FT232H.
 
 ### Install
 
-See [INSTALL.md](INSTALL.md#claudematrix-and-the-led-matrix-plugin) for the program,
+See [INSTALL.md](INSTALL.md#quick-start-the-led-matrix-in-claude-code) for the program,
 the plugin and its settings.
 
 ### How it behaves

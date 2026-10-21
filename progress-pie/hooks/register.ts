@@ -42,17 +42,18 @@ async function publish($: EngineInterface, options: PluginOptions) {
 
   const seconds = Math.floor((await $.clock.now()) / 1000)
   const text = job ? `${job.done} ${job.total} ${seconds}\n` : `0 0 ${seconds}\n`
+  const file = await resolveFile($, String(options.progressFile), 'progress-pie')
   try {
-    await $.fs.write(String(options.progressFile), text)
+    await $.fs.write(file, text)
   } catch (err) {
-    logOnce($, `progress-pie: couldn't write ${String(options.progressFile)}: ${String(err)}`)
+    logOnce($, `progress-pie: couldn't write ${file}: ${String(err)}`)
   }
   updateDisplay($, options)
 }
 
 // Between turns, keeps the pie on the matrix while the job is unfinished.
 function updateDisplay($: EngineInterface, options: PluginOptions) {
-  if (!isTurnRunning && isUnfinished(job) && String(options.binary) !== '') startDisplay($, options)
+  if (!isTurnRunning && isUnfinished(job) && String(options.binary) !== '') void startDisplay($, options)
   else stopDisplay()
 }
 
@@ -68,19 +69,68 @@ function logOnce($: EngineInterface, line: string) {
   $.ui.log(line, { to: 'debug' })
 }
 
+// A setting left at its default is worked out here, so the plugin has no
+// path of one person's machine in it. A bare program name is looked for in
+// Go's install folders (where `go install` puts it, often not on PATH), and
+// otherwise left for the system to find on PATH.
+const resolved = new Map<string, string>()
+
+async function resolveBinary($: EngineInterface, name: string): Promise<string> {
+  if (name === '' || /[\\/]/.test(name)) return name
+  const known = resolved.get(name)
+  if (known !== undefined) return known
+  const gobin = await $.env.get('GOBIN')
+  const gopath = await $.env.get('GOPATH')
+  const home = await $.env.get('HOME')
+  const dirs = [gobin, gopath && `${gopath}/bin`, home && `${home}/go/bin`]
+  for (const dir of dirs) {
+    if (!dir) continue
+    for (const file of [`${dir}/${name}`, `${dir}/${name}.exe`]) {
+      if (await $.fs.exists(file)) {
+        resolved.set(name, file)
+        return file
+      }
+    }
+  }
+  return name
+}
+
+// A file setting left empty lives in ~/.claude.
+async function resolveFile($: EngineInterface, path: string, name: string): Promise<string> {
+  if (path !== '') return path
+  const home = (await $.env.get('HOME')) ?? (await $.env.get('USERPROFILE')) ?? ''
+  return `${home}/.claude/${name}`
+}
+
+// Bumped whenever the display is stopped, so a start that was still looking
+// for the program knows it has been overtaken.
+let generation = 0
+let isStarting = false
+
 function stopDisplay() {
+  generation++
   display?.stop()
   display = undefined
 }
 
-function startDisplay($: EngineInterface, options: PluginOptions) {
-  if (display) return // already up; it rereads the file every frame
-  const binary = String(options.binary)
+async function startDisplay($: EngineInterface, options: PluginOptions) {
+  if (display || isStarting) return // already up; it rereads the file every frame
+  isStarting = true
+  const mine = generation
+  let binary: string
+  let progressFile: string
+  try {
+    binary = await resolveBinary($, String(options.binary))
+    progressFile = await resolveFile($, String(options.progressFile), 'progress-pie')
+  } finally {
+    isStarting = false
+  }
+  if (mine !== generation) return
   // -heartbeat: a line every half second lets the loop below notice a stop.
   const child = $.process.spawn({
     argv: [
       binary, '-brightness', String(options.brightness), '-addr', String(options.addr), '-heartbeat', '500ms',
-      '-progress', String(options.progressFile),
+      '-progress', progressFile,
     ],
   })
   let isStopped = false

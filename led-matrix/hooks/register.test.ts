@@ -10,8 +10,14 @@ function fakeMatrix(on: On) {
   on('turn.complete', () => ({ text: '' }))
   on('session.measure', (_$, e) => ({ changed: e.changed }))
   on('clock.now', () => ({ value: NOW }))
+  // A home folder with claudematrix in Go's install folder, off PATH.
+  on('env.get', (_$, e) => ({ value: e.name === 'HOME' ? '/home/test' : undefined }))
+  const installed = new Set(['/home/test/go/bin/claudematrix'])
+  on('fs.exists', (_$, e) => ({ value: installed.has(e.path) }))
   const writes: string[] = []
+  const paths: string[] = []
   on('fs.write', (_$, e) => {
+    paths.push(e.path)
     writes.push(e.text)
     return { value: undefined }
   })
@@ -32,6 +38,8 @@ function fakeMatrix(on: On) {
   })
   return {
     writes,
+    paths,
+    installed,
     started,
     stopped: () => stopped,
     beat: () => {
@@ -76,7 +84,7 @@ test('starts the animation when a turn starts and stops it when the turn ends', 
   await settle()
   expect(matrix.started.length).toBe(1)
   expect(matrix.started[0]).toEqual([
-    '/home/apollo/go/bin/claudematrix', '-brightness', '0.1', '-addr', '0x70', '-heartbeat', '500ms', '-progress', '', '-limit', '',
+    '/home/test/go/bin/claudematrix', '-brightness', '0.1', '-addr', '0x70', '-heartbeat', '500ms', '-progress', '', '-limit', '',
   ])
 
   await $.turn.complete(complete('t1'))
@@ -128,13 +136,14 @@ test('the limit that is hit is the one whose reset counts', async () => {
 test('hitting the limit writes the reset and counts down between turns', async ($, on) => {
   const matrix = fakeMatrix(on)
   await $.turn.start({ text: 'go', turnId: 't1' })
+  await settle()
   await $.turn.complete(complete('t1'))
   await $.session.measure(measure(100, 2))
   await settle()
   expect(matrix.writes.at(-1)).toBe(`${(NOW + 2 * HOUR) / 1000}\n`)
   expect(matrix.started.at(-1)).toEqual([
-    '/home/apollo/go/bin/claudematrix', '-brightness', '0.1', '-addr', '0x70', '-heartbeat', '500ms',
-    '-countdown', '-limit', '/home/apollo/.claude/usage-limit',
+    '/home/test/go/bin/claudematrix', '-brightness', '0.1', '-addr', '0x70', '-heartbeat', '500ms',
+    '-countdown', '-limit', '/home/test/.claude/usage-limit',
   ])
 
   // A new prompt takes the matrix back for the working light.
@@ -168,4 +177,28 @@ test('a reading during a turn waits for the turn to end', async ($, on) => {
   await settle()
   expect(matrix.started.length).toBe(2)
   expect(matrix.started[1]).toContain('-countdown')
+})
+
+test('the default program is found in Go\'s install folder', async ($, on) => {
+  const matrix = fakeMatrix(on)
+
+  await $.turn.start({ text: 'hello', turnId: 't1' })
+  await settle()
+  expect(matrix.started[0]![0]).toBe('/home/test/go/bin/claudematrix')
+})
+
+test('a program that is not in Go\'s install folder is left for PATH', async ($, on) => {
+  const matrix = fakeMatrix(on)
+  matrix.installed.clear()
+
+  await $.turn.start({ text: 'hello', turnId: 't1' })
+  await settle()
+  expect(matrix.started[0]![0]).toBe('claudematrix')
+})
+
+test('the limit file defaults to ~/.claude/usage-limit', async ($, on) => {
+  const matrix = fakeMatrix(on)
+  await $.session.measure(measure(100, 2))
+  await settle()
+  expect(matrix.paths.at(-1)).toBe('/home/test/.claude/usage-limit')
 })

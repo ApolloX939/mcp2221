@@ -1,6 +1,6 @@
 {
   "name": "led-matrix",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Plays a working animation on an MCP2221 + HT16K33 LED matrix while Claude works, blanks it when Claude is done, and counts down to the reset while the usage limit is hit.",
   "author": {
     "name": "David",
@@ -10,8 +10,8 @@
     "binary": {
       "type": "string",
       "title": "claudematrix program",
-      "description": "Path to the claudematrix program that drives the matrix.",
-      "default": "/home/apollo/go/bin/claudematrix"
+      "description": "Name or path of the claudematrix program. A bare name is looked for in Go's install folders (GOBIN, GOPATH/bin, ~/go/bin), then on PATH.",
+      "default": "claudematrix"
     },
     "brightness": {
       "type": "number",
@@ -28,8 +28,8 @@
     "limitFile": {
       "type": "string",
       "title": "Usage-limit file",
-      "description": "Where the usage limit's reset time is written for claudematrix's countdown. claudematrix reads ~/.claude/usage-limit unless given -limit.",
-      "default": "/home/apollo/.claude/usage-limit"
+      "description": "Where the usage limit's reset time is written for claudematrix's countdown. Empty: ~/.claude/usage-limit.",
+      "default": ""
     }
   }
 }

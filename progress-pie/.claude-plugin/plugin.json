@@ -1,6 +1,6 @@
 {
   "name": "progress-pie",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Shows a pie of a multi-part job's progress in the status line and on the MCP2221 + HT16K33 LED matrix, including while background work runs.",
   "author": {
     "name": "David",
@@ -16,8 +16,8 @@
     "binary": {
       "type": "string",
       "title": "claudematrix program",
-      "description": "Path to the claudematrix program that draws the pie on the matrix between turns. Empty turns the matrix off for this plugin.",
-      "default": "/home/apollo/go/bin/claudematrix"
+      "description": "Name or path of the claudematrix program. A bare name is looked for in Go's install folders (GOBIN, GOPATH/bin, ~/go/bin), then on PATH. Empty turns the matrix off for this plugin.",
+      "default": "claudematrix"
     },
     "brightness": {
       "type": "number",
@@ -34,8 +34,8 @@
     "progressFile": {
       "type": "string",
       "title": "Progress file",
-      "description": "Where progress is written for claudematrix to read. claudematrix reads ~/.claude/progress-pie unless given -progress.",
-      "default": "/home/apollo/.claude/progress-pie"
+      "description": "Where progress is written for claudematrix to read. Empty: ~/.claude/progress-pie.",
+      "default": ""
     }
   }
 }
