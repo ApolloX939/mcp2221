@@ -24,7 +24,30 @@ Also in this repo:
 | [`led-matrix/`](led-matrix) | Claude Code plugin that runs `claudematrix` while Claude works |
 | [`progress-pie/`](progress-pie) | Claude Code plugin that shows a multi-part job's progress as a pie |
 
+## Contents
+
+- [Install](#install)
+- [Usage](#usage)
+  - [LED matrix (ht16k33)](#led-matrix-ht16k33)
+  - [Temperature and humidity (shtc3)](#temperature-and-humidity-shtc3)
+  - [I2C addresses](#i2c-addresses)
+  - [Notes](#notes)
+  - [FT232H](#ft232h)
+- [claudematrix: a "Claude is working" light](#claudematrix-a-claude-is-working-light)
+  - [Install](#install-1)
+  - [How it behaves](#how-it-behaves)
+  - [Usage-limit countdown](#usage-limit-countdown)
+  - [Running it by hand](#running-it-by-hand)
+- [progress-pie: a progress pie for multi-part jobs](#progress-pie-a-progress-pie-for-multi-part-jobs)
+  - [How it behaves](#how-it-behaves-1)
+  - [Install](#install-2)
+- [Tested](#tested)
+- [License](#license)
+
 ## Install
+
+See [INSTALL.md](INSTALL.md) for the library, `claudematrix`, the Claude Code
+plugins and the Linux permissions. In short:
 
 ```sh
 go get github.com/ApolloX939/mcp2221
@@ -159,7 +182,7 @@ if errors.Is(err, ft232h.ErrNACK) { /* nothing at that address */ }
 - `I2CTx` uses a repeated start between the write and the read. The HT16K33
   matrix returns scrambled data for a multi-byte read after a repeated start
   (single bytes are fine), so read it with `I2CWrite` then `I2CRead`.
-- Also needs a udev rule; see [Linux permissions](#linux-permissions).
+- Also needs a udev rule; see [Linux permissions](INSTALL.md#linux-permissions).
 
 ## claudematrix: a "Claude is working" light
 
@@ -190,45 +213,8 @@ It uses an MCP2221 if one is plugged in, and otherwise an FT232H.
 
 ### Install
 
-**1. The program.**
-
-```sh
-go install github.com/ApolloX939/mcp2221/cmd/claudematrix@latest
-```
-
-Or, from a checkout of this repo:
-
-```sh
-go install ./cmd/claudematrix
-```
-
-Either way it goes to `~/go/bin/claudematrix` (or `$GOBIN`). On Linux, also
-add the udev rule from [Linux permissions](#linux-permissions).
-
-**2. The Claude Code plugin**, for every session. This repo is also a plugin
-marketplace. From a checkout:
-
-```sh
-claude plugin marketplace add /path/to/mcp2221
-claude plugin install led-matrix@mcp2221 --scope user
-```
-
-Installed from a local folder like this, Claude Code reads the plugin straight
-from the checkout. After you edit it, run `/reload-plugins` in a session.
-
-Without a checkout, add the marketplace from git instead:
-`claude plugin marketplace add ApolloX939/mcp2221`.
-
-Then start a new session, or run `/reload-plugins` in an open one.
-
-**3. Settings** (optional). In Claude Code, run `/plugin configure led-matrix@mcp2221`:
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `binary` | `/home/apollo/go/bin/claudematrix` | Path to `claudematrix`. Change it if yours is elsewhere. |
-| `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
-| `addr` | `0x70` | I2C address of the matrix, 0x70 to 0x77 (see [I2C addresses](#i2c-addresses)) |
-| `limitFile` | `/home/apollo/.claude/usage-limit` | Where the usage limit's reset time is written. `claudematrix` reads `~/.claude/usage-limit` unless given `-limit`. |
+See [INSTALL.md](INSTALL.md#claudematrix-and-the-led-matrix-plugin) for the program,
+the plugin and its settings.
 
 ### How it behaves
 
@@ -341,48 +327,7 @@ unix-seconds`, and `claudematrix` checks that file every frame.
 
 ### Install
 
-Install `claudematrix` and add the marketplace as for `led-matrix` above, then:
-
-```sh
-claude plugin install progress-pie@mcp2221 --scope user
-```
-
-Settings, in `/plugin configure progress-pie@mcp2221`:
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `enabled` | `true` | Off: no progress tool, no status line entry, nothing on the matrix |
-| `binary` | `/home/apollo/go/bin/claudematrix` | Path to `claudematrix`. Empty: status line only. |
-| `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
-| `addr` | `0x70` | I2C address of the matrix, 0x70 to 0x77 (see [I2C addresses](#i2c-addresses)) |
-| `progressFile` | `/home/apollo/.claude/progress-pie` | Where progress is written. `claudematrix` reads `~/.claude/progress-pie` unless given `-progress`. |
-
-## Linux permissions
-
-By default only root can open the HID device. To use it as a normal user, create
-`/etc/udev/rules.d/99-mcp2221.rules`:
-
-```
-SUBSYSTEM=="hidraw", ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="00dd", MODE="0660", GROUP="plugdev", TAG+="uaccess"
-```
-
-Then run `sudo udevadm control --reload-rules`, replug the adapter, and make sure you
-are in the `plugdev` group.
-
-The rule must match `SUBSYSTEM=="hidraw"`. A rule matching `SUBSYSTEM=="usb"`
-(common for libusb-based tools such as Blinka) doesn't cover the HID device this
-library uses.
-
-For the FT232H, create `/etc/udev/rules.d/99-ft232h.rules`:
-
-```
-SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", MODE="0660", GROUP="plugdev", TAG+="uaccess"
-```
-
-This one matches `SUBSYSTEM=="usb"`, because the FT232H is driven through its
-raw USB device file.
-
-Windows and macOS need no setup for the MCP2221.
+See [INSTALL.md](INSTALL.md#progress-pie-plugin) for the plugin and its settings.
 
 ## Tested
 
