@@ -34,6 +34,9 @@ func main() {
 	heartbeat := flag.Duration("heartbeat", 0, "print a line this often, and stop when output is closed (0 = off)")
 	progressFile := flag.String("progress", defaultProgressFile(), "file the progress-pie plugin writes; \"\" = no pie")
 	limitFile := flag.String("limit", defaultLimitFile(), "file the led-matrix plugin writes the usage limit's reset time to; \"\" = no countdown")
+	clockX := flag.Int("clock-x", 0, "move the countdown this many pixels right (negative: left)")
+	clockY := flag.Int("clock-y", 0, "move the countdown this many pixels down (negative: up)")
+	align := flag.Bool("align", false, "alignment mode: move a sample countdown with the arrow keys (or h j k l / a s d w), then q to print the -clock-x and -clock-y to use")
 	countdown := flag.Bool("countdown", false, "show only the countdown to the usage limit's reset, and exit when there is none")
 	flag.Parse()
 
@@ -49,12 +52,20 @@ func main() {
 		go beat(ctx, cancel, *heartbeat)
 	}
 
+	if *align {
+		if err := runAlign(ctx, byte(*addr), *brightness, offset{*clockX, *clockY}); err != nil {
+			fmt.Fprintln(os.Stderr, "claudematrix:", err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	// Keep trying while the adapter is unplugged or another program
 	// (such as statmatrix) has it open.
 	if *countdown {
 		*progressFile = ""
 	}
-	show := shows{progress: *progressFile, limit: *limitFile, countdownOnly: *countdown}
+	show := shows{progress: *progressFile, limit: *limitFile, countdownOnly: *countdown, clock: offset{*clockX, *clockY}}
 	lastErr := ""
 	for ctx.Err() == nil {
 		if *countdown {
@@ -104,6 +115,7 @@ type shows struct {
 	progress      string // progress file for the pie; "" = none
 	limit         string // usage-limit file for the countdown; "" = none
 	countdownOnly bool   // only the countdown; stop when there is none
+	clock         offset // where the countdown sits on the matrix
 }
 
 // animate runs the animation until ctx ends (or, countdown only, until the
@@ -130,7 +142,7 @@ func animate(ctx context.Context, addr byte, brightness float64, frame time.Dura
 	for step := 0; ; step++ {
 		now := time.Now()
 		if left, ok := readLimit(show.limit, now); ok {
-			drawClock(grid, left, now)
+			drawClock(grid, left, now, show.clock)
 		} else if show.countdownOnly {
 			return nil
 		} else if p, ok := readProgress(show.progress, now); ok {

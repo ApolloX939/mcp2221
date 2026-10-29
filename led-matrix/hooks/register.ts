@@ -130,7 +130,7 @@ async function updateCountdown($: EngineInterface, options: PluginOptions) {
   if (isTurnRunning) return
   const isLimited = limitResetsAt > (await $.clock.now())
   if (isLimited && current?.kind !== 'countdown') {
-    void spawn($, options, 'countdown', ['-countdown', '-limit', await resolveFile($, String(options.limitFile), 'usage-limit')])
+    void spawn($, options, 'countdown', ['-countdown', '-clock-x', String(options.clockX ?? 0), '-clock-y', String(options.clockY ?? 0), '-limit', await resolveFile($, String(options.limitFile), 'usage-limit')])
   } else if (!isLimited && current?.kind === 'countdown') {
     stopAnimation()
   }

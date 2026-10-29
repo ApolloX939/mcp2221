@@ -1,6 +1,6 @@
 {
   "name": "led-matrix",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Plays a working animation on an MCP2221 + HT16K33 LED matrix while Claude works, blanks it when Claude is done, and counts down to the reset while the usage limit is hit.",
   "author": {
     "name": "David",
@@ -24,6 +24,18 @@
       "title": "I2C address",
       "description": "I2C address of the matrix, 0x70 to 0x77, set with the jumpers on its back (passed to claudematrix as -addr).",
       "default": "0x70"
+    },
+    "clockX": {
+      "type": "number",
+      "title": "Countdown shift right",
+      "description": "Pixels to move the usage-limit countdown right (negative: left), for a matrix mounted off-centre. Find the value with claudematrix -align.",
+      "default": 0
+    },
+    "clockY": {
+      "type": "number",
+      "title": "Countdown shift down",
+      "description": "Pixels to move the usage-limit countdown down (negative: up). Find the value with claudematrix -align.",
+      "default": 0
     },
     "limitFile": {
       "type": "string",

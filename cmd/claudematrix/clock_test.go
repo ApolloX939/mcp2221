@@ -45,3 +45,21 @@ func TestFaceFor(t *testing.T) {
 		}
 	}
 }
+
+func TestTranslateKeys(t *testing.T) {
+	got := string(translateKeys([]byte("\x1b[A\x1b[Bq\x1b[C\x1b[D")))
+	if got != "kjqlh" {
+		t.Errorf("translateKeys = %q; want %q", got, "kjqlh")
+	}
+}
+
+func TestAlignKey(t *testing.T) {
+	for b, want := range map[byte][2]int{'a': {-1, 0}, 'l': {1, 0}, 'w': {0, -1}, 'j': {0, 1}} {
+		if dx, dy, ok := alignKey(b); !ok || dx != want[0] || dy != want[1] {
+			t.Errorf("alignKey(%q) = %d, %d, %v", b, dx, dy, ok)
+		}
+	}
+	if _, _, ok := alignKey('x'); ok {
+		t.Error("alignKey('x') should not move")
+	}
+}

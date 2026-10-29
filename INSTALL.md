@@ -84,7 +84,24 @@ Optional. In Claude Code, run `/plugin configure led-matrix@mcp2221`:
 | `binary` | `claudematrix` | Name or path of the program. A bare name is looked for in `$GOBIN`, `$GOPATH/bin` and `~/go/bin`, then on `PATH`. |
 | `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
 | `addr` | `0x70` | I2C address of the matrix, 0x70 to 0x77 (see [I2C addresses](README.md#i2c-addresses)) |
+| `clockX` | `0` | Pixels to move the usage-limit countdown right (negative: left). See [Aligning the countdown](#aligning-the-countdown). |
+| `clockY` | `0` | Pixels to move the countdown down (negative: up). |
 | `limitFile` | empty | Where the usage limit's reset time is written. Empty: `~/.claude/usage-limit`. |
+
+### Aligning the countdown
+
+If the matrix is mounted off-centre, move the countdown in software. Close any
+working Claude session (only one program can open the adapter), then run this in
+a terminal:
+
+```sh
+claudematrix -align
+```
+
+It shows a sample `3:42` countdown with a green pixel in each corner. Move it
+with the arrow keys (or `WASD`, or `hjkl`) and press `q`. It prints the
+`clockX` and `clockY` to enter in `/plugin configure led-matrix@mcp2221`. To
+start from your current values, pass them: `claudematrix -align -clock-x 1 -clock-y -1`.
 
 ### Troubleshooting
 

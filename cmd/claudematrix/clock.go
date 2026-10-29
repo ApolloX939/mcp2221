@@ -92,23 +92,28 @@ func faceFor(left time.Duration) clockFace {
 	}
 }
 
-// drawClock draws the time left. A dot right of the number blinks once a
-// second, so a frozen display is easy to tell from a slow countdown.
-func drawClock(grid *ht16k33.Matrix8x8x2, left time.Duration, now time.Time) {
+// offset moves the clock face on the matrix, in pixels (x right, y down), for
+// a matrix that is mounted off-centre. Pixels moved off the edge are cut off.
+type offset struct{ x, y int }
+
+// drawClock draws the time left, moved by off. A dot right of the number
+// blinks once a second, so a frozen display is easy to tell from a slow
+// countdown.
+func drawClock(grid *ht16k33.Matrix8x8x2, left time.Duration, now time.Time, off offset) {
 	grid.Fill(ht16k33.Off)
 	face := faceFor(left)
 	for i := range face.dots {
-		grid.Set(2*i, 0, ht16k33.Orange)
+		grid.Set(off.x+2*i, off.y, ht16k33.Orange)
 	}
 	if face.number < 10 && face.unit != unitMinutes {
 		// One digit of hours or days, centred.
-		drawDigit(grid, face.number, 2, 2, face.unit)
+		drawDigit(grid, face.number, off.x+2, off.y+2, face.unit)
 	} else {
-		drawDigit(grid, face.number/10, 0, 2, face.unit)
-		drawDigit(grid, face.number%10, 4, 2, face.unit)
+		drawDigit(grid, face.number/10, off.x, off.y+2, face.unit)
+		drawDigit(grid, face.number%10, off.x+4, off.y+2, face.unit)
 	}
 	if now.Nanosecond() < int(500*time.Millisecond) {
-		grid.Set(7, 6, face.unit)
+		grid.Set(off.x+7, off.y+6, face.unit)
 	}
 }
 
