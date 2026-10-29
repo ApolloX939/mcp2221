@@ -1,6 +1,6 @@
 {
   "name": "led-matrix",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Plays a working animation on an MCP2221 + HT16K33 LED matrix while Claude works, blanks it when Claude is done, and counts down to the reset while the usage limit is hit.",
   "author": {
     "name": "David",
