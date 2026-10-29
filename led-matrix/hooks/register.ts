@@ -92,7 +92,7 @@ async function spawn($: EngineInterface, options: PluginOptions, kind: Animation
   // -heartbeat makes claudematrix print a line every half second, so the
   // loop below wakes up regularly and can notice it has been asked to stop.
   const child = $.process.spawn({
-    argv: [binary, '-brightness', String(options.brightness), '-addr', String(options.addr), '-rotate', String(options.rotate ?? 0), '-heartbeat', '500ms', ...flags],
+    argv: [binary, '-brightness', String(options.brightness), '-addr', String(options.addr), '-rotate', String(options.rotate ?? 0), ...(options.mirror ? ['-mirror'] : []), '-heartbeat', '500ms', ...flags],
   })
   let isStopped = false
   const animation: Animation = {

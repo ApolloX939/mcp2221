@@ -25,6 +25,12 @@
       "description": "I2C address of the matrix, 0x70 to 0x77, set with the jumpers on its back (passed to claudematrix as -addr).",
       "default": "0x70"
     },
+    "mirror": {
+      "type": "boolean",
+      "title": "Mirror",
+      "description": "Mirror the display left to right, if digits and their order come out backwards. Find the value with claudematrix -align.",
+      "default": false
+    },
     "rotate": {
       "type": "number",
       "title": "Rotation",

@@ -32,7 +32,8 @@ type Matrix8x8x2 struct {
 	bus  I2CWriter
 	addr byte
 	buf  [16]byte
-	rot  int // quarter turns clockwise
+	rot  int  // quarter turns clockwise
+	flip bool // mirror left to right, before the rotation
 }
 
 // NewMatrix8x8x2 sets up the display at addr with brightness from 0.0 to 1.0.
@@ -58,11 +59,20 @@ func (m *Matrix8x8x2) SetRotation(degrees int) error {
 	return nil
 }
 
-// Set colors the pixel at (x, y), turned by the rotation. Out-of-range pixels
+// SetMirror mirrors what is drawn left to right, for a matrix that shows
+// everything backwards. It is applied before the rotation, so left and right
+// are as seen once the rotation has the display upright. It applies to pixels
+// set afterwards.
+func (m *Matrix8x8x2) SetMirror(on bool) { m.flip = on }
+
+// Set colors the pixel at (x, y), mirrored and turned as set. Out-of-range pixels
 // are ignored.
 func (m *Matrix8x8x2) Set(x, y int, color byte) {
 	if x < 0 || x > 7 || y < 0 || y > 7 {
 		return
+	}
+	if m.flip {
+		x = 7 - x
 	}
 	for range m.rot {
 		x, y = 7-y, x

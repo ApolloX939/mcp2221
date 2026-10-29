@@ -129,7 +129,7 @@ async function startDisplay($: EngineInterface, options: PluginOptions) {
   // -heartbeat: a line every half second lets the loop below notice a stop.
   const child = $.process.spawn({
     argv: [
-      binary, '-brightness', String(options.brightness), '-addr', String(options.addr), '-rotate', String(options.rotate ?? 0),
+      binary, '-brightness', String(options.brightness), '-addr', String(options.addr), '-rotate', String(options.rotate ?? 0), ...(options.mirror ? ['-mirror'] : []),
       '-heartbeat', '500ms',
       '-progress', progressFile,
     ],

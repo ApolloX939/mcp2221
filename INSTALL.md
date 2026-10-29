@@ -85,6 +85,7 @@ Optional. In Claude Code, run `/plugin configure led-matrix@mcp2221`:
 | `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
 | `addr` | `0x70` | I2C address of the matrix, 0x70 to 0x77 (see [I2C addresses](README.md#i2c-addresses)) |
 | `rotate` | `0` | Turn the display clockwise by 0, 90, 180 or 270 degrees, for a matrix mounted sideways or upside down. See [Aligning the display](#aligning-the-display). |
+| `mirror` | `false` | Mirror the display left to right, if digits and their order come out backwards. Press `m` in `-align` to try it. |
 | `clockX` | `0` | Pixels to move the usage-limit countdown right (negative: left). See [Aligning the display](#aligning-the-display). |
 | `clockY` | `0` | Pixels to move the countdown down (negative: up). |
 | `limitFile` | empty | Where the usage limit's reset time is written. Empty: `~/.claude/usage-limit`. |
@@ -101,8 +102,8 @@ claudematrix -align
 
 It shows a sample `3:42` countdown with a green pixel in each corner. Turn the
 display with `r` and move the countdown with the arrow keys (or `WASD`, or
-`hjkl`), then press `q`. It prints the `rotate`, `clockX` and `clockY` to enter in `/plugin configure led-matrix@mcp2221`. To
-start from your current values, pass them: `claudematrix -align -rotate 90 -clock-x 1 -clock-y -1`.
+`hjkl`), then press `q`. It prints the `rotate`, `mirror`, `clockX` and `clockY` to enter in `/plugin configure led-matrix@mcp2221`. To
+start from your current values, pass them: `claudematrix -align -rotate 90 -mirror -clock-x 1 -clock-y -1`.
 
 ### Troubleshooting
 
@@ -136,6 +137,7 @@ Settings, in `/plugin configure progress-pie@mcp2221`:
 | `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
 | `addr` | `0x70` | I2C address of the matrix, 0x70 to 0x77 (see [I2C addresses](README.md#i2c-addresses)) |
 | `rotate` | `0` | Turn the display clockwise by 0, 90, 180 or 270 degrees (see [Aligning the display](#aligning-the-display)) |
+| `mirror` | `false` | Mirror the display left to right (see [Aligning the display](#aligning-the-display)) |
 | `progressFile` | empty | Where progress is written. Empty: `~/.claude/progress-pie`. |
 
 ## Go library
