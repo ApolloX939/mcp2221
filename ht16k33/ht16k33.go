@@ -1,7 +1,10 @@
 // Package ht16k33 drives an Adafruit bicolor 8x8 LED matrix (HT16K33 backpack).
 package ht16k33
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 // Colors for the bicolor 8x8 matrix.
 const (
@@ -29,6 +32,7 @@ type Matrix8x8x2 struct {
 	bus  I2CWriter
 	addr byte
 	buf  [16]byte
+	rot  int // quarter turns clockwise
 }
 
 // NewMatrix8x8x2 sets up the display at addr with brightness from 0.0 to 1.0.
@@ -43,10 +47,25 @@ func NewMatrix8x8x2(bus I2CWriter, addr byte, brightness float64) (*Matrix8x8x2,
 	return m, m.Show()
 }
 
-// Set colors the pixel at (x, y). Out-of-range pixels are ignored.
+// SetRotation turns what is drawn clockwise by degrees, for a matrix mounted
+// sideways or upside down. degrees must be 0, 90, 180 or 270. It applies to
+// pixels set afterwards.
+func (m *Matrix8x8x2) SetRotation(degrees int) error {
+	if degrees < 0 || degrees > 270 || degrees%90 != 0 {
+		return fmt.Errorf("ht16k33: rotation must be 0, 90, 180 or 270 degrees, not %d", degrees)
+	}
+	m.rot = degrees / 90
+	return nil
+}
+
+// Set colors the pixel at (x, y), turned by the rotation. Out-of-range pixels
+// are ignored.
 func (m *Matrix8x8x2) Set(x, y int, color byte) {
 	if x < 0 || x > 7 || y < 0 || y > 7 {
 		return
+	}
+	for range m.rot {
+		x, y = 7-y, x
 	}
 	mask := byte(1) << y
 	setBit(&m.buf[2*x], mask, color&Green != 0)

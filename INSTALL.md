@@ -84,13 +84,14 @@ Optional. In Claude Code, run `/plugin configure led-matrix@mcp2221`:
 | `binary` | `claudematrix` | Name or path of the program. A bare name is looked for in `$GOBIN`, `$GOPATH/bin` and `~/go/bin`, then on `PATH`. |
 | `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
 | `addr` | `0x70` | I2C address of the matrix, 0x70 to 0x77 (see [I2C addresses](README.md#i2c-addresses)) |
-| `clockX` | `0` | Pixels to move the usage-limit countdown right (negative: left). See [Aligning the countdown](#aligning-the-countdown). |
+| `rotate` | `0` | Turn the display clockwise by 0, 90, 180 or 270 degrees, for a matrix mounted sideways or upside down. See [Aligning the display](#aligning-the-display). |
+| `clockX` | `0` | Pixels to move the usage-limit countdown right (negative: left). See [Aligning the display](#aligning-the-display). |
 | `clockY` | `0` | Pixels to move the countdown down (negative: up). |
 | `limitFile` | empty | Where the usage limit's reset time is written. Empty: `~/.claude/usage-limit`. |
 
-### Aligning the countdown
+### Aligning the display
 
-If the matrix is mounted off-centre, move the countdown in software. Close any
+If the matrix is mounted sideways or upside down, turn the display in software; if the usage-limit countdown sits off-centre, move it. Close any
 working Claude session (only one program can open the adapter), then run this in
 a terminal:
 
@@ -98,10 +99,10 @@ a terminal:
 claudematrix -align
 ```
 
-It shows a sample `3:42` countdown with a green pixel in each corner. Move it
-with the arrow keys (or `WASD`, or `hjkl`) and press `q`. It prints the
-`clockX` and `clockY` to enter in `/plugin configure led-matrix@mcp2221`. To
-start from your current values, pass them: `claudematrix -align -clock-x 1 -clock-y -1`.
+It shows a sample `3:42` countdown with a green pixel in each corner. Turn the
+display with `r` and move the countdown with the arrow keys (or `WASD`, or
+`hjkl`), then press `q`. It prints the `rotate`, `clockX` and `clockY` to enter in `/plugin configure led-matrix@mcp2221`. To
+start from your current values, pass them: `claudematrix -align -rotate 90 -clock-x 1 -clock-y -1`.
 
 ### Troubleshooting
 
@@ -134,6 +135,7 @@ Settings, in `/plugin configure progress-pie@mcp2221`:
 | `binary` | `claudematrix` | Name or path of the program, found as for `led-matrix`. Empty: status line only. |
 | `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
 | `addr` | `0x70` | I2C address of the matrix, 0x70 to 0x77 (see [I2C addresses](README.md#i2c-addresses)) |
+| `rotate` | `0` | Turn the display clockwise by 0, 90, 180 or 270 degrees (see [Aligning the display](#aligning-the-display)) |
 | `progressFile` | empty | Where progress is written. Empty: `~/.claude/progress-pie`. |
 
 ## Go library

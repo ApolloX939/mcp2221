@@ -34,6 +34,7 @@ func main() {
 	heartbeat := flag.Duration("heartbeat", 0, "print a line this often, and stop when output is closed (0 = off)")
 	progressFile := flag.String("progress", defaultProgressFile(), "file the progress-pie plugin writes; \"\" = no pie")
 	limitFile := flag.String("limit", defaultLimitFile(), "file the led-matrix plugin writes the usage limit's reset time to; \"\" = no countdown")
+	rotate := flag.Int("rotate", 0, "turn the display clockwise by 0, 90, 180 or 270 degrees, for a matrix mounted sideways or upside down")
 	clockX := flag.Int("clock-x", 0, "move the countdown this many pixels right (negative: left)")
 	clockY := flag.Int("clock-y", 0, "move the countdown this many pixels down (negative: up)")
 	align := flag.Bool("align", false, "alignment mode: move a sample countdown with the arrow keys (or h j k l / a s d w), then q to print the -clock-x and -clock-y to use")
@@ -53,7 +54,7 @@ func main() {
 	}
 
 	if *align {
-		if err := runAlign(ctx, byte(*addr), *brightness, offset{*clockX, *clockY}); err != nil {
+		if err := runAlign(ctx, byte(*addr), *brightness, *rotate, offset{*clockX, *clockY}); err != nil {
 			fmt.Fprintln(os.Stderr, "claudematrix:", err)
 			os.Exit(1)
 		}
@@ -65,7 +66,7 @@ func main() {
 	if *countdown {
 		*progressFile = ""
 	}
-	show := shows{progress: *progressFile, limit: *limitFile, countdownOnly: *countdown, clock: offset{*clockX, *clockY}}
+	show := shows{rotate: *rotate, progress: *progressFile, limit: *limitFile, countdownOnly: *countdown, clock: offset{*clockX, *clockY}}
 	lastErr := ""
 	for ctx.Err() == nil {
 		if *countdown {
@@ -112,6 +113,7 @@ func openBus() (bus, error) {
 
 // shows says what animate draws besides the spinner.
 type shows struct {
+	rotate        int    // degrees clockwise: 0, 90, 180 or 270
 	progress      string // progress file for the pie; "" = none
 	limit         string // usage-limit file for the countdown; "" = none
 	countdownOnly bool   // only the countdown; stop when there is none
@@ -136,6 +138,9 @@ func animate(ctx context.Context, addr byte, brightness float64, frame time.Dura
 		grid.Fill(ht16k33.Off)
 		_ = grid.Show()
 	}()
+	if err := grid.SetRotation(show.rotate); err != nil {
+		return err
+	}
 
 	ticker := time.NewTicker(frame)
 	defer ticker.Stop()

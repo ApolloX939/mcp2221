@@ -12,7 +12,8 @@ import (
 
 // Alignment mode shows a sample countdown (3:42) with a green pixel in each
 // corner of the matrix, so a matrix mounted off-centre can be lined up in
-// software. The keys move the countdown; q prints the flags that keep it there.
+// software. The arrow keys move the countdown, r turns the display a quarter
+// turn, and q prints the flags that keep it there.
 
 // alignLeft is the time the sample countdown shows.
 const alignLeft = 3*time.Hour + 42*time.Minute
@@ -100,7 +101,7 @@ func translateKeys(in []byte) []byte {
 }
 
 // runAlign runs alignment mode, starting from off.
-func runAlign(ctx context.Context, addr byte, brightness float64, off offset) error {
+func runAlign(ctx context.Context, addr byte, brightness float64, rotate int, off offset) error {
 	keys, restore, err := alignKeys(ctx)
 	if err != nil {
 		return err
@@ -121,7 +122,11 @@ func runAlign(ctx context.Context, addr byte, brightness float64, off offset) er
 		_ = grid.Show()
 	}()
 
-	fmt.Print("Arrow keys, WASD or hjkl move the countdown; q or Enter finishes.\r\n")
+	if err := grid.SetRotation(rotate); err != nil {
+		return err
+	}
+
+	fmt.Print("Arrow keys, WASD or hjkl move the countdown, r turns the display; q or Enter finishes.\r\n")
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 	for {
@@ -133,17 +138,20 @@ func runAlign(ctx context.Context, addr byte, brightness float64, off offset) er
 		if err := grid.Show(); err != nil {
 			return err
 		}
-		fmt.Printf("\r-clock-x %d -clock-y %d   ", off.x, off.y)
+		fmt.Printf("\r-rotate %d -clock-x %d -clock-y %d   ", rotate, off.x, off.y)
 		select {
 		case <-ctx.Done():
 			fmt.Print("\r\n")
 			return nil
 		case b, ok := <-keys:
 			if !ok || b == 'q' || b == '\r' || b == '\n' {
-				fmt.Printf("\r\nSet clockX to %d and clockY to %d in /plugin configure led-matrix@mcp2221.\r\n", off.x, off.y)
+				fmt.Printf("\r\nSet rotate to %d, clockX to %d and clockY to %d in /plugin configure led-matrix@mcp2221.\r\n", rotate, off.x, off.y)
 				return nil
 			}
-			if dx, dy, ok := alignKey(b); ok {
+			if b == 'r' {
+				rotate = (rotate + 90) % 360
+				_ = grid.SetRotation(rotate)
+			} else if dx, dy, ok := alignKey(b); ok {
 				off.x = clampShift(off.x + dx)
 				off.y = clampShift(off.y + dy)
 			}

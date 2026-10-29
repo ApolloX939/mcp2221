@@ -1,6 +1,6 @@
 {
   "name": "progress-pie",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Shows a pie of a multi-part job's progress in the status line and on the MCP2221 + HT16K33 LED matrix, including while background work runs.",
   "author": {
     "name": "David",
@@ -30,6 +30,12 @@
       "title": "I2C address",
       "description": "I2C address of the matrix, 0x70 to 0x77, set with the jumpers on its back (passed to claudematrix as -addr).",
       "default": "0x70"
+    },
+    "rotate": {
+      "type": "number",
+      "title": "Rotation",
+      "description": "Turn the display clockwise by 0, 90, 180 or 270 degrees, for a matrix mounted sideways or upside down. Find the value with claudematrix -align.",
+      "default": 0
     },
     "progressFile": {
       "type": "string",
