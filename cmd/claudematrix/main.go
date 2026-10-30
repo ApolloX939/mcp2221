@@ -1,4 +1,5 @@
-// claudematrix plays a "working" animation on the LED matrix until it is
+// claudematrix plays a "working" animation on the LED matrix (the bicolor 8x8
+// HT16K33, or at -addr 0x30-0x33 the 13x9 RGB IS31FL3741) until it is
 // stopped, then blanks the display. While a multi-part job is in progress
 // (see -progress) it draws a progress pie instead, and while the usage limit
 // is hit (see -limit) a countdown to when it resets. With -countdown it shows
@@ -29,7 +30,7 @@ import (
 
 func main() {
 	brightness := flag.Float64("brightness", 0.1, "display brightness, 0.0 to 1.0")
-	addr := flag.Uint("addr", 0x70, "I2C address of the matrix")
+	addr := flag.Uint("addr", 0x70, "I2C address of the matrix: 0x30-0x33 for the Adafruit 13x9 RGB matrix (IS31FL3741), otherwise the bicolor 8x8 (HT16K33)")
 	frame := flag.Duration("frame", 120*time.Millisecond, "time per animation step")
 	heartbeat := flag.Duration("heartbeat", 0, "print a line this often, and stop when output is closed (0 = off)")
 	progressFile := flag.String("progress", defaultProgressFile(), "file the progress-pie plugin writes; \"\" = no pie")
@@ -40,6 +41,7 @@ func main() {
 	clockY := flag.Int("clock-y", 0, "move the countdown this many pixels down (negative: up)")
 	align := flag.Bool("align", false, "alignment mode: move a sample countdown with the arrow keys (or h j k l / a s d w), then q to print the -clock-x and -clock-y to use")
 	countdown := flag.Bool("countdown", false, "show only the countdown to the usage limit's reset, and exit when there is none")
+	colors := flag.Bool("colors", false, "colour test: fill the display with red, green, then orange, in turn, until interrupted")
 	flag.Parse()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
@@ -52,6 +54,14 @@ func main() {
 		// before it can blank the display.
 		signal.Ignore(syscall.SIGPIPE)
 		go beat(ctx, cancel, *heartbeat)
+	}
+
+	if *colors {
+		if err := runColors(ctx, byte(*addr), *brightness, *rotate, *mirror); err != nil {
+			fmt.Fprintln(os.Stderr, "claudematrix:", err)
+			os.Exit(1)
+		}
+		return
 	}
 
 	if *align {
@@ -90,6 +100,7 @@ func main() {
 // bus is an open I2C adapter.
 type bus interface {
 	I2CWrite(addr byte, data []byte) error
+	I2CRead(addr byte, buf []byte) error
 	Close() error
 }
 
@@ -132,7 +143,7 @@ func animate(ctx context.Context, addr byte, brightness float64, frame time.Dura
 	}
 	defer bus.Close()
 
-	grid, err := ht16k33.NewMatrix8x8x2(bus, addr, brightness)
+	grid, err := openDisplay(bus, addr, brightness)
 	if err != nil {
 		return err
 	}
@@ -246,7 +257,7 @@ func spinnerFrame(step int) int {
 	return i
 }
 
-func drawSpinner(grid *ht16k33.Matrix8x8x2, step int) {
+func drawSpinner(grid display, step int) {
 	frame := spinner[spinnerFrame(step)]
 	for y, row := range frame {
 		for x, c := range row {

@@ -113,7 +113,7 @@ func runAlign(ctx context.Context, addr byte, brightness float64, rotate int, mi
 		return err
 	}
 	defer bus.Close()
-	grid, err := ht16k33.NewMatrix8x8x2(bus, addr, brightness)
+	grid, err := openDisplay(bus, addr, brightness)
 	if err != nil {
 		return err
 	}

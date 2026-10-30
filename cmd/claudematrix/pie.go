@@ -101,7 +101,7 @@ func inCircle(dx, dy float64) bool {
 }
 
 // drawPie draws p; step makes the current part blink.
-func drawPie(grid *ht16k33.Matrix8x8x2, p progress, step int) {
+func drawPie(grid display, p progress, step int) {
 	blinkOn := step%8 < 5
 	for y := range 8 {
 		for x := range 8 {

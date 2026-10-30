@@ -83,7 +83,7 @@ Optional. In Claude Code, run `/plugin configure led-matrix@mcp2221`:
 |---------|---------|-------------|
 | `binary` | `claudematrix` | Name or path of the program. A bare name is looked for in `$GOBIN`, `$GOPATH/bin` and `~/go/bin`, then on `PATH`. |
 | `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
-| `addr` | `0x70` | I2C address of the matrix, 0x70 to 0x77 (see [I2C addresses](README.md#i2c-addresses)) |
+| `addr` | `0x70` | I2C address of the matrix: 0x70 to 0x77 for the bicolor 8x8, 0x30 to 0x33 for the 13x9 RGB matrix, which picks the display used (see [I2C addresses](README.md#i2c-addresses)) |
 | `rotate` | `0` | Turn the display clockwise by 0, 90, 180 or 270 degrees, for a matrix mounted sideways or upside down. See [Aligning the display](#aligning-the-display). |
 | `mirror` | `false` | Mirror the display left to right, if digits and their order come out backwards. Press `m` in `-align` to try it. |
 | `clockX` | `0` | Pixels to move the usage-limit countdown right (negative: left). See [Aligning the display](#aligning-the-display). |
@@ -135,7 +135,7 @@ Settings, in `/plugin configure progress-pie@mcp2221`:
 | `enabled` | `true` | Off: no progress tool, no status line entry, nothing on the matrix |
 | `binary` | `claudematrix` | Name or path of the program, found as for `led-matrix`. Empty: status line only. |
 | `brightness` | `0.1` | Matrix brightness, 0.0 to 1.0 |
-| `addr` | `0x70` | I2C address of the matrix, 0x70 to 0x77 (see [I2C addresses](README.md#i2c-addresses)) |
+| `addr` | `0x70` | I2C address of the matrix: 0x70 to 0x77 for the bicolor 8x8, 0x30 to 0x33 for the 13x9 RGB matrix, which picks the display used (see [I2C addresses](README.md#i2c-addresses)) |
 | `rotate` | `0` | Turn the display clockwise by 0, 90, 180 or 270 degrees (see [Aligning the display](#aligning-the-display)) |
 | `mirror` | `false` | Mirror the display left to right (see [Aligning the display](#aligning-the-display)) |
 | `progressFile` | empty | Where progress is written. Empty: `~/.claude/progress-pie`. |

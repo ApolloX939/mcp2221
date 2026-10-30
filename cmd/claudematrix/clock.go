@@ -99,7 +99,7 @@ type offset struct{ x, y int }
 // drawClock draws the time left, moved by off. A dot right of the number
 // blinks once a second, so a frozen display is easy to tell from a slow
 // countdown.
-func drawClock(grid *ht16k33.Matrix8x8x2, left time.Duration, now time.Time, off offset) {
+func drawClock(grid display, left time.Duration, now time.Time, off offset) {
 	grid.Fill(ht16k33.Off)
 	face := faceFor(left)
 	for i := range face.dots {
@@ -117,7 +117,7 @@ func drawClock(grid *ht16k33.Matrix8x8x2, left time.Duration, now time.Time, off
 	}
 }
 
-func drawDigit(grid *ht16k33.Matrix8x8x2, d, x0, y0 int, color byte) {
+func drawDigit(grid display, d, x0, y0 int, color byte) {
 	for y, row := range digits[d] {
 		for x, c := range row {
 			if c == '#' {
