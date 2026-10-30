@@ -1,6 +1,6 @@
 {
   "name": "progress-pie",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Shows a pie of a multi-part job's progress in the status line and on the MCP2221 + HT16K33 LED matrix, including while background work runs.",
   "author": {
     "name": "David",
@@ -28,7 +28,7 @@
     "addr": {
       "type": "string",
       "title": "I2C address",
-      "description": "I2C address of the matrix, 0x70 to 0x77, set with the jumpers on its back (passed to claudematrix as -addr).",
+      "description": "I2C address of the matrix (passed to claudematrix as -addr). 0x70 to 0x77 uses the bicolor 8x8 matrix (set with the jumpers on its back); 0x30 to 0x33 uses the 13x9 RGB matrix.",
       "default": "0x70"
     },
     "mirror": {

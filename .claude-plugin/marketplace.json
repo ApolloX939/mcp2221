@@ -9,12 +9,12 @@
     {
       "name": "led-matrix",
       "source": "./led-matrix",
-      "description": "Plays a working animation on an MCP2221 + HT16K33 LED matrix while Claude works, blanks it when Claude is done, and counts down to the reset while the usage limit is hit."
+      "description": "Plays a working animation on an MCP2221 + HT16K33 or IS31FL3741 LED matrix while Claude works, blanks it when Claude is done, and counts down to the reset while the usage limit is hit."
     },
     {
       "name": "progress-pie",
       "source": "./progress-pie",
-      "description": "Shows a pie of a multi-part job's progress in the status line and on the MCP2221 + HT16K33 LED matrix, including while background work runs."
+      "description": "Shows a pie of a multi-part job's progress in the status line and on the MCP2221 + HT16K33 or IS31FL3741 LED matrix, including while background work runs."
     }
   ]
 }
