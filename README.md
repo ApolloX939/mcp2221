@@ -178,6 +178,8 @@ import "github.com/ApolloX939/mcp2221/sh1106"
 d, err := sh1106.New(dev, sh1106.DefaultAddr) // turns the display on, blank
 d.Set(10, 5, true)      // pixel (x, y) on or off; (0, 0) is the top left, 128x64
 d.Fill(false)           // every pixel
+d.DrawText(0, 0, "Hello!", 2, true) // text at (x, y), scale 2 is 10x14 pixels per letter
+w := sh1106.TextWidth("Hello!", 2)  // width in pixels, to center or right-align it
 err = d.Show()          // send the buffered pixels
 d.SetContrast(0x40)     // brightness, 0-255
 d.SetRotation(180)      // for a board mounted upside down
@@ -186,7 +188,14 @@ d.SetInvert(true)       // swap lit and unlit pixels
 
 The address is 0x3D as shipped, and 0x3C with the board's address jumper
 changed. The controller has no ID register, so `New` can only check that the
-display answers. There is no text or drawing helper yet, only pixels.
+display answers.
+
+`DrawText` uses a built-in 5x7 font for printable ASCII; other characters
+come out as `?`. Each letter takes 6x8 pixels at scale 1 (`CharWidth`,
+`CharHeight`), so a line holds 21 of them, and `\n` starts a new line. Text
+that runs off the display is clipped. Pass `false` to draw unlit pixels,
+which cuts text out of a filled area. The letters `g`, `j`, `p`, `q` and `y`
+have no descenders in this font.
 
 ### I2C addresses
 
