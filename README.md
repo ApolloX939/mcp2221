@@ -20,6 +20,7 @@ Also in this repo:
 | [`ft232h/`](ft232h) | I2C through an FTDI FT232H (Linux only) |
 | [`shtc3/`](shtc3) | Driver for the Adafruit SHTC3 temperature and humidity sensor |
 | [`sht41/`](sht41) | Driver for the Adafruit Sensirion SHT41 temperature and humidity sensor |
+| [`is31fl3741/`](is31fl3741) | Driver for the Adafruit 13x9 PWM RGB LED matrix (IS31FL3741) |
 | [`ht16k33/`](ht16k33) | Driver for the Adafruit bicolor 8x8 LED matrix (HT16K33 backpack) |
 | [`cmd/claudematrix/`](cmd/claudematrix) | A "Claude is working" animation for that matrix |
 | [`led-matrix/`](led-matrix) | Claude Code plugin that runs `claudematrix` while Claude works |
@@ -32,6 +33,7 @@ Also in this repo:
   - [LED matrix (ht16k33)](#led-matrix-ht16k33)
   - [Temperature and humidity (shtc3)](#temperature-and-humidity-shtc3)
   - [Temperature and humidity (sht41)](#temperature-and-humidity-sht41)
+  - [RGB LED matrix (is31fl3741)](#rgb-led-matrix-is31fl3741)
   - [I2C addresses](#i2c-addresses)
   - [Notes](#notes)
   - [FT232H](#ft232h)
@@ -127,6 +129,26 @@ The SHT41's address is fixed at 0x44. It doesn't sleep between reads, so
 `Scan` finds it. The heater warms the sensor, so let it cool before trusting
 later readings.
 
+### RGB LED matrix (is31fl3741)
+
+```go
+import "github.com/ApolloX939/mcp2221/is31fl3741"
+
+m, err := is31fl3741.New(dev, is31fl3741.DefaultAddr, 0.1) // checks the chip; brightness 0.0-1.0
+m.Set(0, 0, 255, 0, 0)  // pixel (x, y) to r, g, b; (0, 0) is the top left
+m.Fill(0, 0, 16)        // every pixel
+err = m.Show()          // send the buffered pixels
+m.SetBrightness(0.5)    // takes effect at once
+m.Shutdown()            // display off, pixels kept; m.Wake() brings them back
+```
+
+The board is 13 pixels wide and 9 tall (`is31fl3741.Width`, `Height`). It is
+very bright: even 0.1 is a lot at close range, so start low. `Set` replaces a
+pixel's whole color. The board's wiring is irregular, and the driver follows
+the mapping in Adafruit's own library.
+
+The address is 0x30 by default, and 0x30-0x33 with the board's ADDR pin.
+
 ### I2C addresses
 
 Every device on an I2C bus needs its own 7-bit address. Two devices at the same
@@ -137,6 +159,7 @@ address answer together and corrupt each other's data, with no error to warn you
 | [HT16K33 LED matrix backpack](https://www.adafruit.com/product/902) | 0x70 | Yes, 0x70-0x77, with solder jumpers |
 | [SHTC3 sensor](https://www.adafruit.com/product/4636) | 0x70 | No, always 0x70 |
 | [SHT41 sensor](https://www.adafruit.com/product/5776) | 0x44 | No, always 0x44 |
+| [IS31FL3741 13x9 RGB matrix](https://www.adafruit.com/product/5201) | 0x30 | Yes, 0x30-0x33, with the ADDR pin |
 
 The MCP2221 and FT232H are the bus itself, not devices on it, so they have no
 address.
