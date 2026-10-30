@@ -22,6 +22,7 @@ Also in this repo:
 | [`sht41/`](sht41) | Driver for the Adafruit Sensirion SHT41 temperature and humidity sensor |
 | [`is31fl3741/`](is31fl3741) | Driver for the Adafruit 13x9 PWM RGB LED matrix (IS31FL3741) |
 | [`tmf8806/`](tmf8806) | Driver for the Adafruit TMF8806 time-of-flight distance sensor |
+| [`sh1106/`](sh1106) | Driver for the Adafruit monochrome 1.3" 128x64 OLED (SH1106) |
 | [`ht16k33/`](ht16k33) | Driver for the Adafruit bicolor 8x8 LED matrix (HT16K33 backpack) |
 | [`cmd/claudematrix/`](cmd/claudematrix) | A "Claude is working" animation for that matrix |
 | [`led-matrix/`](led-matrix) | Claude Code plugin that runs `claudematrix` while Claude works |
@@ -36,6 +37,7 @@ Also in this repo:
   - [Temperature and humidity (sht41)](#temperature-and-humidity-sht41)
   - [RGB LED matrix (is31fl3741)](#rgb-led-matrix-is31fl3741)
   - [Distance (tmf8806)](#distance-tmf8806)
+  - [OLED display (sh1106)](#oled-display-sh1106)
   - [I2C addresses](#i2c-addresses)
   - [Notes](#notes)
   - [FT232H](#ft232h)
@@ -168,6 +170,24 @@ err = sensor.Stop()
 The address is fixed at 0x41. Not supported: the 10 m mode (it needs a RAM
 firmware patch), histograms, calibration and the GPIO functions.
 
+### OLED display (sh1106)
+
+```go
+import "github.com/ApolloX939/mcp2221/sh1106"
+
+d, err := sh1106.New(dev, sh1106.DefaultAddr) // turns the display on, blank
+d.Set(10, 5, true)      // pixel (x, y) on or off; (0, 0) is the top left, 128x64
+d.Fill(false)           // every pixel
+err = d.Show()          // send the buffered pixels
+d.SetContrast(0x40)     // brightness, 0-255
+d.SetRotation(180)      // for a board mounted upside down
+d.SetInvert(true)       // swap lit and unlit pixels
+```
+
+The address is 0x3D as shipped, and 0x3C with the board's address jumper
+changed. The controller has no ID register, so `New` can only check that the
+display answers. There is no text or drawing helper yet, only pixels.
+
 ### I2C addresses
 
 Every device on an I2C bus needs its own 7-bit address. Two devices at the same
@@ -178,6 +198,7 @@ address answer together and corrupt each other's data, with no error to warn you
 | [HT16K33 LED matrix backpack](https://www.adafruit.com/product/902) | 0x70 | Yes, 0x70-0x77, with solder jumpers |
 | [SHTC3 sensor](https://www.adafruit.com/product/4636) | 0x70 | No, always 0x70 |
 | [SHT41 sensor](https://www.adafruit.com/product/5776) | 0x44 | No, always 0x44 |
+| [1.3" 128x64 OLED](https://www.adafruit.com/product/938) | 0x3D | Yes, 0x3C, with the address jumper |
 | [TMF8806 distance sensor](https://www.adafruit.com/product/6523) | 0x41 | No, always 0x41 |
 | [IS31FL3741 13x9 RGB matrix](https://www.adafruit.com/product/5201) | 0x30 | Yes, 0x30-0x33, with the ADDR pin |
 
