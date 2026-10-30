@@ -19,6 +19,7 @@ Also in this repo:
 |------|------------|
 | [`ft232h/`](ft232h) | I2C through an FTDI FT232H (Linux only) |
 | [`shtc3/`](shtc3) | Driver for the Adafruit SHTC3 temperature and humidity sensor |
+| [`sht41/`](sht41) | Driver for the Adafruit Sensirion SHT41 temperature and humidity sensor |
 | [`ht16k33/`](ht16k33) | Driver for the Adafruit bicolor 8x8 LED matrix (HT16K33 backpack) |
 | [`cmd/claudematrix/`](cmd/claudematrix) | A "Claude is working" animation for that matrix |
 | [`led-matrix/`](led-matrix) | Claude Code plugin that runs `claudematrix` while Claude works |
@@ -30,6 +31,7 @@ Also in this repo:
 - [Usage](#usage)
   - [LED matrix (ht16k33)](#led-matrix-ht16k33)
   - [Temperature and humidity (shtc3)](#temperature-and-humidity-shtc3)
+  - [Temperature and humidity (sht41)](#temperature-and-humidity-sht41)
   - [I2C addresses](#i2c-addresses)
   - [Notes](#notes)
   - [FT232H](#ft232h)
@@ -109,6 +111,22 @@ asleep. `shtc3.New` is the way to check that it is there.
 The SHTC3's address is fixed at 0x70, the same as the LED matrix's default,
 so the two clash on one bus. See [I2C addresses](#i2c-addresses).
 
+### Temperature and humidity (sht41)
+
+```go
+import "github.com/ApolloX939/mcp2221/sht41"
+
+sensor, err := sht41.New(dev)  // any adapter; resets and checks the serial number
+r, err := sensor.Read()        // about 9 ms
+fmt.Printf("%.1f °C (%.1f °F), %.1f %%RH\n", r.Celsius, r.Fahrenheit(), r.Humidity)
+sensor.Precision = sht41.Low   // about 2 ms per read, less precise
+r, err = sensor.Heat(sht41.Heater20mW1s) // heater pulse to clear condensation
+```
+
+The SHT41's address is fixed at 0x44. It doesn't sleep between reads, so
+`Scan` finds it. The heater warms the sensor, so let it cool before trusting
+later readings.
+
 ### I2C addresses
 
 Every device on an I2C bus needs its own 7-bit address. Two devices at the same
@@ -118,6 +136,7 @@ address answer together and corrupt each other's data, with no error to warn you
 |--------|---------|----------------|
 | [HT16K33 LED matrix backpack](https://www.adafruit.com/product/902) | 0x70 | Yes, 0x70-0x77, with solder jumpers |
 | [SHTC3 sensor](https://www.adafruit.com/product/4636) | 0x70 | No, always 0x70 |
+| [SHT41 sensor](https://www.adafruit.com/product/5776) | 0x44 | No, always 0x44 |
 
 The MCP2221 and FT232H are the bus itself, not devices on it, so they have no
 address.
