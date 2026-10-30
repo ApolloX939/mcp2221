@@ -23,6 +23,7 @@ Also in this repo:
 | [`is31fl3741/`](is31fl3741) | Driver for the Adafruit 13x9 PWM RGB LED matrix (IS31FL3741) |
 | [`tmf8806/`](tmf8806) | Driver for the Adafruit TMF8806 time-of-flight distance sensor |
 | [`sh1106/`](sh1106) | Driver for the Adafruit monochrome 1.3" 128x64 OLED (SH1106) |
+| [`nunchuk/`](nunchuk) | Driver for a Wii Nunchuk through the Adafruit Nunchuck Breakout Adapter |
 | [`ht16k33/`](ht16k33) | Driver for the Adafruit bicolor 8x8 LED matrix (HT16K33 backpack) |
 | [`cmd/claudematrix/`](cmd/claudematrix) | A "Claude is working" animation for that matrix |
 | [`led-matrix/`](led-matrix) | Claude Code plugin that runs `claudematrix` while Claude works |
@@ -38,6 +39,7 @@ Also in this repo:
   - [RGB LED matrix (is31fl3741)](#rgb-led-matrix-is31fl3741)
   - [Distance (tmf8806)](#distance-tmf8806)
   - [OLED display (sh1106)](#oled-display-sh1106)
+  - [Wii Nunchuk (nunchuk)](#wii-nunchuk-nunchuk)
   - [I2C addresses](#i2c-addresses)
   - [Notes](#notes)
   - [FT232H](#ft232h)
@@ -197,6 +199,23 @@ that runs off the display is clipped. Pass `false` to draw unlit pixels,
 which cuts text out of a filled area. The letters `g`, `j`, `p`, `q` and `y`
 have no descenders in this font.
 
+### Wii Nunchuk (nunchuk)
+
+```go
+import "github.com/ApolloX939/mcp2221/nunchuk"
+
+n, err := nunchuk.New(dev)   // wakes the controller and checks it answers
+s, err := n.Read()           // about 3 ms
+fmt.Println(s.JoyX, s.JoyY)  // joystick, 0-255 with the center near 128
+fmt.Println(s.C, s.Z)        // buttons, true while pressed
+fmt.Println(s.AccelX, s.AccelY, s.AccelZ) // 10-bit accelerometer, 0-1023
+x, y := s.Stick()            // joystick as -1 to 1, up is positive
+```
+
+`New` returns `nunchuk.ErrNoData` if the controller is unplugged: it answers
+with all 0xFF. The address is fixed at 0x52. Joysticks differ, so the raw
+range and center vary a little from one controller to the next.
+
 ### I2C addresses
 
 Every device on an I2C bus needs its own 7-bit address. Two devices at the same
@@ -208,6 +227,7 @@ address answer together and corrupt each other's data, with no error to warn you
 | [SHTC3 sensor](https://www.adafruit.com/product/4636) | 0x70 | No, always 0x70 |
 | [SHT41 sensor](https://www.adafruit.com/product/5776) | 0x44 | No, always 0x44 |
 | [1.3" 128x64 OLED](https://www.adafruit.com/product/938) | 0x3D | Yes, 0x3C, with the address jumper |
+| [Wii Nunchuk adapter](https://www.adafruit.com/product/4836) | 0x52 | No, always 0x52 |
 | [TMF8806 distance sensor](https://www.adafruit.com/product/6523) | 0x41 | No, always 0x41 |
 | [IS31FL3741 13x9 RGB matrix](https://www.adafruit.com/product/5201) | 0x30 | Yes, 0x30-0x33, with the ADDR pin |
 
