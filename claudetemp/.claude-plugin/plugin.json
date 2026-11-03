@@ -1,6 +1,6 @@
 {
   "name": "claudetemp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shows the temperature of an SHT41 or SHTC3 sensor on the MCP2221 or FT232H adapter in the status line, refreshed every 30 seconds.",
   "author": {
     "name": "David",

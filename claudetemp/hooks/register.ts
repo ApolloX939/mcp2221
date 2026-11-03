@@ -96,9 +96,10 @@ async function read($: EngineInterface, options: PluginOptions) {
     } catch (err) {
       logOnce($, `claudetemp: couldn't run ${String(options.binary)}: ${String(err)}`)
     }
-    if (out.trim().split('\n').at(-1)?.trim() === 'busy') return // keep the last reading
-    const next = temperatureText(out, unit)
-    if (next !== shown) await publish($, options, next)
+    // Busy: keep the last reading, and stamp it again so progress-pie still
+    // counts it as current.
+    const next = out.trim().split('\n').at(-1)?.trim() === 'busy' ? shown : temperatureText(out, unit)
+    if (next !== undefined || shown !== undefined) await publish($, options, next)
   } finally {
     isReading = false
   }
