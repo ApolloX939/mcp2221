@@ -1,12 +1,13 @@
 import type { EngineInterface, PluginOptions, Register } from 'claude-code'
 
-// Shows a temperature sensor's reading in the status line, every 30 seconds.
+// Shows a temperature sensor's reading in the status line, every 30 seconds
+// (the `interval` setting).
 //
 // The reading comes from the claudetemp program (cmd/claudetemp in this
 // repo), which finds an SHT41 or SHTC3 on the MCP2221 or FT232H adapter and
 // prints one number as %0.1f in the unit asked for (F by default). With no
 // sensor, nothing is shown. The latest reading is also written to a file as
-// "unix-seconds text", so the progress-pie plugin can keep it in the status
+// "unix-seconds valid-seconds text" (valid for three intervals), so the progress-pie plugin can keep it in the status
 // line over the pie.
 //
 // The adapter can be open in one program at a time. While another (such as
@@ -14,9 +15,19 @@ import type { EngineInterface, PluginOptions, Register } from 'claude-code'
 //
 // The `enabled` setting turns all of it off.
 
-export const INTERVAL_MS = 30_000
+export const DEFAULT_INTERVAL_S = 30
+export const MIN_INTERVAL_S = 5
+export const MAX_INTERVAL_S = 3600
 
-let timer: ReturnType<typeof setInterval> | undefined
+// The seconds between readings from the `interval` setting: a whole number
+// from 5 to 3600, else 30.
+export function intervalSeconds(options: PluginOptions): number {
+  const n = Math.floor(Number(options.interval ?? DEFAULT_INTERVAL_S))
+  if (!Number.isFinite(n)) return DEFAULT_INTERVAL_S
+  return Math.min(MAX_INTERVAL_S, Math.max(MIN_INTERVAL_S, n))
+}
+
+let timer: ReturnType<typeof setTimeout> | undefined
 let shown: string | undefined
 let isReading = false
 let lastError = ''
@@ -75,7 +86,7 @@ async function publish($: EngineInterface, options: PluginOptions, text: string 
   const seconds = Math.floor((await $.clock.now()) / 1000)
   const file = await resolveFile($, String(options.temperatureFile))
   try {
-    await $.fs.write(file, `${seconds} ${text ?? ''}\n`)
+    await $.fs.write(file, `${seconds} ${3 * intervalSeconds(options)} ${text ?? ''}\n`)
   } catch (err) {
     logOnce($, `claudetemp: couldn't write ${file}: ${String(err)}`)
   }
@@ -105,9 +116,28 @@ async function read($: EngineInterface, options: PluginOptions) {
   }
 }
 
+// Bumped by every stop, so a reading that was still running when the timer
+// was restarted doesn't start a second chain of timers.
+let generation = 0
+
 function stop() {
-  if (timer !== undefined) clearInterval(timer)
+  generation++
+  if (timer !== undefined) clearTimeout(timer)
   timer = undefined
+}
+
+// Stops the running timer and starts a new one, waiting the `interval`
+// setting as it is now before each reading. The next reading is at once.
+// A changed setting takes effect by the next reading at the latest.
+function restart($: EngineInterface, options: PluginOptions) {
+  stop()
+  const mine = generation
+  const tick = async () => {
+    await read($, options)
+    if (mine !== generation) return
+    timer = setTimeout(() => void tick(), intervalSeconds(options) * 1000)
+  }
+  timer = setTimeout(() => void tick(), 0)
 }
 
 export const register: Register = (on, options) => {
@@ -122,8 +152,7 @@ export const register: Register = (on, options) => {
       $.ui.status(undefined)
       return next(e)
     }
-    void read($, options)
-    timer = setInterval(() => void read($, options), INTERVAL_MS)
+    restart($, options)
     return next(e)
   })
 

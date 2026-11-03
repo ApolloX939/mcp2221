@@ -1,6 +1,6 @@
 import type { On, ProcessSpawnChunk, ProcessSpawnResult } from 'claude-code'
 import { expect, test } from 'claude-code/testing'
-import { temperatureText } from './register'
+import { intervalSeconds, temperatureText } from './register'
 
 function fakes(on: On) {
   on('session.start', (_$, e) => ({ cwd: e.cwd }))
@@ -46,7 +46,7 @@ test('a sensor shows the temperature, in Fahrenheit by default', async ($, on) =
   await settle()
   expect(f.argv[0]).toEqual(['/home/test/go/bin/claudetemp', '-unit', 'F'])
   expect(f.statuses.at(-1)).toBe('72.4°F')
-  expect(f.writes.at(-1)).toBe('/home/test/.claude/claudetemp: 1700000000 72.4°F\n')
+  expect(f.writes.at(-1)).toBe('/home/test/.claude/claudetemp: 1700000000 90 72.4°F\n')
 })
 
 test('Celsius can be chosen', { options: { unit: 'C' } }, async ($, on) => {
@@ -73,4 +73,21 @@ test('turned off, nothing is read or shown', { options: { enabled: false } }, as
   await settle()
   expect(f.argv.length).toBe(0)
   expect(f.statuses.every(s => s === undefined)).toBe(true)
+})
+
+test('the interval is 30 seconds unless set between 5 and 3600', () => {
+  expect(intervalSeconds({})).toBe(30)
+  expect(intervalSeconds({ interval: 10 })).toBe(10)
+  expect(intervalSeconds({ interval: '45' })).toBe(45)
+  expect(intervalSeconds({ interval: 1 })).toBe(5)
+  expect(intervalSeconds({ interval: 99999 })).toBe(3600)
+  expect(intervalSeconds({ interval: 'soon' })).toBe(30)
+})
+
+test('the file says how long the reading is good for', { options: { interval: 60 } }, async ($, on) => {
+  const f = fakes(on)
+  f.sensor.output = '72.4\n'
+  await start($)
+  await settle()
+  expect(f.writes.at(-1)).toBe('/home/test/.claude/claudetemp: 1700000000 180 72.4°F\n')
 })

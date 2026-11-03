@@ -145,7 +145,7 @@ Settings, in `/plugin configure progress-pie@mcp2221`:
 ## claudetemp plugin
 
 Shows the temperature of an SHT41 or SHTC3 sensor on the same adapter in the
-status line, like `72.4°F` (formatted `%0.1f`), read every 30 seconds. With no
+status line, like `72.4°F` (formatted `%0.1f`), read every 30 seconds (the `interval` setting). With no
 sensor, nothing is shown. It works on its own, without `progress-pie` or the
 matrix. Install the reader and the plugin (after adding the marketplace as in
 the [quick start](#quick-start-the-led-matrix-in-claude-code)):
@@ -161,6 +161,7 @@ Settings, in `/plugin configure claudetemp@mcp2221`:
 |---------|---------|-------------|
 | `enabled` | `true` | Off: nothing is read or shown |
 | `unit` | `F` | `F` for Fahrenheit or `C` for Celsius |
+| `interval` | `30` | Seconds between readings, 5 to 3600. A change stops the timer and restarts it with the new delay. |
 | `binary` | `claudetemp` | Name or path of the program, found as for `claudematrix` |
 | `temperatureFile` | empty | Where the latest reading is written. Empty: `~/.claude/claudetemp`. |
 

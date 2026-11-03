@@ -12,7 +12,7 @@ import type { EngineInterface, PluginOptions, Register } from 'claude-code'
 // itself so the pie shows on the matrix.
 //
 // If the claudetemp plugin has a fresh temperature reading (it writes one
-// every 30 seconds), the status line keeps showing it instead of the pie.
+// every interval), the status line keeps showing it instead of the pie.
 //
 // The `enabled` setting turns all of it off.
 
@@ -39,14 +39,12 @@ function isUnfinished(j: Job | undefined): j is Job {
   return j !== undefined && j.done < j.total
 }
 
-// The claudetemp plugin's latest reading ("unix-seconds text"), if it is
-// recent enough to still be running, else undefined.
-const TEMPERATURE_MAX_AGE_S = 90
-
+// The claudetemp plugin's latest reading ("unix-seconds valid-seconds text"),
+// if it is still within the time it said it is good for, else undefined.
 export function freshTemperature(file: string, nowSeconds: number): string | undefined {
-  const m = /^(\d+) (.+)\n?$/.exec(file)
-  if (!m || nowSeconds - Number(m[1]) > TEMPERATURE_MAX_AGE_S) return undefined
-  return m[2].trim()
+  const m = /^(\d+) (\d+) (.+)\n?$/.exec(file)
+  if (!m || nowSeconds - Number(m[1]) > Number(m[2])) return undefined
+  return m[3].trim()
 }
 
 async function readTemperature($: EngineInterface, options: PluginOptions): Promise<string | undefined> {

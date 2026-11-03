@@ -1,7 +1,7 @@
 {
   "name": "claudetemp",
-  "version": "0.1.1",
-  "description": "Shows the temperature of an SHT41 or SHTC3 sensor on the MCP2221 or FT232H adapter in the status line, refreshed every 30 seconds.",
+  "version": "0.2.0",
+  "description": "Shows the temperature of an SHT41 or SHTC3 sensor on the MCP2221 or FT232H adapter in the status line, refreshed every 30 seconds by default.",
   "author": {
     "name": "David",
     "email": "ApolloX939@users.noreply.github.com"
@@ -18,6 +18,12 @@
       "title": "Temperature unit",
       "description": "F for Fahrenheit or C for Celsius. The status line shows a reading like 72.4°F.",
       "default": "F"
+    },
+    "interval": {
+      "type": "number",
+      "title": "Seconds between readings",
+      "description": "How often to read the sensor, from 5 to 3600 seconds. A change restarts the timer with the new delay.",
+      "default": 30
     },
     "binary": {
       "type": "string",

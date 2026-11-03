@@ -174,16 +174,17 @@ test('the defaults are the program in Go\'s install folder and ~/.claude/progres
   expect(f.started.at(-1)).toContain('/home/test/.claude/progress-pie')
 })
 
-test('a fresh claudetemp reading is only trusted for 90 seconds', () => {
-  expect(freshTemperature('1700000000 72.4°F\n', 1_700_000_030)).toBe('72.4°F')
-  expect(freshTemperature('1700000000 72.4°F\n', 1_700_000_100)).toBeUndefined()
-  expect(freshTemperature('1700000000 \n', 1_700_000_001)).toBeUndefined()
+test('a claudetemp reading is trusted for the time it says', () => {
+  expect(freshTemperature('1700000000 90 72.4°F\n', 1_700_000_030)).toBe('72.4°F')
+  expect(freshTemperature('1700000000 90 72.4°F\n', 1_700_000_100)).toBeUndefined()
+  expect(freshTemperature('1700000000 600 72.4°F\n', 1_700_000_100)).toBe('72.4°F')
+  expect(freshTemperature('1700000000 90 \n', 1_700_000_001)).toBeUndefined()
   expect(freshTemperature('', 1_700_000_001)).toBeUndefined()
 })
 
 test('a fresh temperature from claudetemp keeps the status line over the pie', async ($, on) => {
   const f = fakes(on)
-  f.tempFile.text = '1700000000 72.4°F\n'
+  f.tempFile.text = '1700000000 90 72.4°F\n'
   await $.turn.start({ text: 'go', turnId: 't1' })
   await progress($, 1, 4, 'building')
   await settle()

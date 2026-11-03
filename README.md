@@ -27,7 +27,7 @@ Also in this repo:
 | [`ht16k33/`](ht16k33) | Driver for the Adafruit bicolor 8x8 LED matrix (HT16K33 backpack) |
 | [`cmd/claudematrix/`](cmd/claudematrix) | A "Claude is working" animation for that matrix |
 | [`cmd/claudetemp/`](cmd/claudetemp) | Prints the temperature of an SHT41 or SHTC3 (`-unit F` or `C`), for the claudetemp plugin |
-| [`claudetemp/`](claudetemp) | Claude Code plugin that shows that temperature in the status line, every 30 seconds |
+| [`claudetemp/`](claudetemp) | Claude Code plugin that shows that temperature in the status line, every 30 seconds by default |
 | [`led-matrix/`](led-matrix) | Claude Code plugin that runs `claudematrix` while Claude works |
 | [`progress-pie/`](progress-pie) | Claude Code plugin that shows a multi-part job's progress as a pie |
 
