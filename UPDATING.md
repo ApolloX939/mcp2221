@@ -20,9 +20,11 @@ it.
 
 ```sh
 go install github.com/ApolloX939/mcp2221/cmd/claudematrix@latest
+go install github.com/ApolloX939/mcp2221/cmd/claudetemp@latest
 claude plugin marketplace update mcp2221
 claude plugin update led-matrix@mcp2221 --scope user
 claude plugin update progress-pie@mcp2221 --scope user
+claude plugin update claudetemp@mcp2221 --scope user
 ```
 
 Skip the plugin line you never installed, and use the `--scope` you installed
@@ -47,6 +49,10 @@ GOFLAGS=-mod=mod GOPROXY=direct go install github.com/ApolloX939/mcp2221/cmd/cla
 `claudematrix -h` lists the flags this build knows. A flag missing there means
 the program is older than the plugin asking for it.
 
+The `claudetemp` program (for the `claudetemp` plugin) updates the same way,
+with `cmd/claudetemp` in place of `cmd/claudematrix`. If you have not
+installed that plugin yet, see [INSTALL.md](INSTALL.md#claudetemp-plugin).
+
 A running matrix keeps the old program until it stops. The next prompt in
 Claude Code starts the new one.
 
@@ -59,6 +65,7 @@ copy of. Refresh that copy, then update the plugins from it:
 claude plugin marketplace update mcp2221
 claude plugin update led-matrix@mcp2221 --scope user
 claude plugin update progress-pie@mcp2221 --scope user
+claude plugin update claudetemp@mcp2221 --scope user
 ```
 
 You can do the same inside Claude Code with `/plugin`: open the **Marketplaces**
