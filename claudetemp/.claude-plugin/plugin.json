@@ -1,0 +1,35 @@
+{
+  "name": "claudetemp",
+  "version": "0.1.0",
+  "description": "Shows the temperature of an SHT41 or SHTC3 sensor on the MCP2221 or FT232H adapter in the status line, refreshed every 30 seconds.",
+  "author": {
+    "name": "David",
+    "email": "ApolloX939@users.noreply.github.com"
+  },
+  "userConfig": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Show the temperature. Off: nothing is read or shown.",
+      "default": true
+    },
+    "unit": {
+      "type": "string",
+      "title": "Temperature unit",
+      "description": "F for Fahrenheit or C for Celsius. The status line shows a reading like 72.4°F.",
+      "default": "F"
+    },
+    "binary": {
+      "type": "string",
+      "title": "claudetemp program",
+      "description": "Name or path of the claudetemp program. A bare name is looked for in Go's install folders (GOBIN, GOPATH/bin, ~/go/bin), then on PATH.",
+      "default": "claudetemp"
+    },
+    "temperatureFile": {
+      "type": "string",
+      "title": "Temperature file",
+      "description": "Where the latest reading is written, so progress-pie can leave the temperature in the status line. Empty: ~/.claude/claudetemp.",
+      "default": ""
+    }
+  }
+}

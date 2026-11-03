@@ -1,17 +1,21 @@
 import type { On, ProcessSpawnChunk, ProcessSpawnResult } from 'claude-code'
 import { expect, test } from 'claude-code/testing'
-import { pieGlyph } from './register'
+import { freshTemperature, pieGlyph } from './register'
 
 // Fakes the engine's turn events, file writes, and claudematrix.
 function fakes(on: On) {
   on('turn.start', (_$, e) => ({ turnId: e.turnId }))
   on('turn.complete', () => ({ text: '' }))
 
+  on('tool.register', () => ({ value: undefined }))
+  on('ui.log', () => ({ value: undefined }))
   on('clock.now', () => ({ value: 1_700_000_000_000 }))
   // A home folder with claudematrix in Go's install folder, off PATH.
   on('env.get', (_$, e) => ({ value: e.name === 'HOME' ? '/home/test' : undefined }))
   const installed = new Set(['/home/test/go/bin/claudematrix'])
-  on('fs.exists', (_$, e) => ({ value: installed.has(e.path) }))
+  const tempFile = { text: undefined as string | undefined }
+  on('fs.exists', (_$, e) => ({ value: installed.has(e.path) || (e.path === '/home/test/.claude/claudetemp' && tempFile.text !== undefined) }))
+  on('fs.read', () => ({ value: tempFile.text }))
   const statuses: (string | undefined)[] = []
   on('ui.status', (_$, e) => {
     statuses.push(e.text)
@@ -45,6 +49,7 @@ function fakes(on: On) {
     writes,
     paths,
     installed,
+    tempFile,
     started,
     stopped: () => stopped,
     beat: () => {
@@ -87,7 +92,7 @@ test('between turns an unfinished job keeps the pie on the matrix', async ($, on
   await settle()
   expect(f.started.length).toBe(1)
   expect(f.started[0]).toEqual([
-    '/home/test/go/bin/claudematrix', '-brightness', '0.1', '-addr', '0x70', '-heartbeat', '500ms',
+    '/home/test/go/bin/claudematrix', '-brightness', '0.1', '-addr', '0x70', '-rotate', '0', '-heartbeat', '500ms',
     '-progress', '/home/test/.claude/progress-pie',
   ])
 
@@ -167,4 +172,29 @@ test('the defaults are the program in Go\'s install folder and ~/.claude/progres
   expect(f.paths.at(-1)).toBe('/home/test/.claude/progress-pie')
   expect(f.started.at(-1)![0]).toBe('/home/test/go/bin/claudematrix')
   expect(f.started.at(-1)).toContain('/home/test/.claude/progress-pie')
+})
+
+test('a fresh claudetemp reading is only trusted for 90 seconds', () => {
+  expect(freshTemperature('1700000000 72.4°F\n', 1_700_000_030)).toBe('72.4°F')
+  expect(freshTemperature('1700000000 72.4°F\n', 1_700_000_100)).toBeUndefined()
+  expect(freshTemperature('1700000000 \n', 1_700_000_001)).toBeUndefined()
+  expect(freshTemperature('', 1_700_000_001)).toBeUndefined()
+})
+
+test('a fresh temperature from claudetemp keeps the status line over the pie', async ($, on) => {
+  const f = fakes(on)
+  f.tempFile.text = '1700000000 72.4°F\n'
+  await $.turn.start({ text: 'go', turnId: 't1' })
+  await progress($, 1, 4, 'building')
+  await settle()
+  expect(f.statuses.at(-1)).toBe('72.4°F')
+  expect(f.writes.at(-1)).toBe('1 4 1700000000\n') // the matrix still gets the pie
+})
+
+test('without claudetemp the pie has the status line', async ($, on) => {
+  const f = fakes(on)
+  await $.turn.start({ text: 'go', turnId: 't1' })
+  await progress($, 1, 4)
+  await settle()
+  expect(f.statuses.at(-1)).toBe('◔ 1/4')
 })

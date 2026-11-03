@@ -11,6 +11,9 @@ import type { EngineInterface, PluginOptions, Register } from 'claude-code'
 // is unfinished (background work is running), this plugin runs claudematrix
 // itself so the pie shows on the matrix.
 //
+// If the claudetemp plugin has a fresh temperature reading (it writes one
+// every 30 seconds), the status line keeps showing it instead of the pie.
+//
 // The `enabled` setting turns all of it off.
 
 const TOOL = 'progress'
@@ -36,9 +39,31 @@ function isUnfinished(j: Job | undefined): j is Job {
   return j !== undefined && j.done < j.total
 }
 
-// Shows the job in the status line and writes it for claudematrix.
+// The claudetemp plugin's latest reading ("unix-seconds text"), if it is
+// recent enough to still be running, else undefined.
+const TEMPERATURE_MAX_AGE_S = 90
+
+export function freshTemperature(file: string, nowSeconds: number): string | undefined {
+  const m = /^(\d+) (.+)\n?$/.exec(file)
+  if (!m || nowSeconds - Number(m[1]) > TEMPERATURE_MAX_AGE_S) return undefined
+  return m[2].trim()
+}
+
+async function readTemperature($: EngineInterface, options: PluginOptions): Promise<string | undefined> {
+  try {
+    const path = await resolveFile($, String(options.temperatureFile ?? ''), 'claudetemp')
+    if (!(await $.fs.exists(path))) return undefined
+    return freshTemperature(String(await $.fs.read(path)), Math.floor((await $.clock.now()) / 1000))
+  } catch {
+    return undefined
+  }
+}
+
+// Shows the job in the status line (unless claudetemp has a temperature to
+// show there) and writes it for claudematrix.
 async function publish($: EngineInterface, options: PluginOptions) {
-  $.ui.status(job ? `${pieGlyph(job.done, job.total)} ${job.done}/${job.total}${job.label ? ' ' + job.label : ''}` : undefined)
+  const temperature = await readTemperature($, options)
+  $.ui.status(temperature ?? (job ? `${pieGlyph(job.done, job.total)} ${job.done}/${job.total}${job.label ? ' ' + job.label : ''}` : undefined))
 
   const seconds = Math.floor((await $.clock.now()) / 1000)
   const text = job ? `${job.done} ${job.total} ${seconds}\n` : `0 0 ${seconds}\n`

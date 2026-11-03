@@ -11,6 +11,7 @@ library and the Linux permissions they need. For what they do, see the [README](
   - [Settings](#settings)
   - [Troubleshooting](#troubleshooting)
 - [progress-pie plugin](#progress-pie-plugin)
+- [claudetemp plugin](#claudetemp-plugin)
 - [Go library](#go-library)
 
 ## Quick start: the LED matrix in Claude Code
@@ -139,6 +140,34 @@ Settings, in `/plugin configure progress-pie@mcp2221`:
 | `rotate` | `0` | Turn the display clockwise by 0, 90, 180 or 270 degrees (see [Aligning the display](#aligning-the-display)) |
 | `mirror` | `false` | Mirror the display left to right (see [Aligning the display](#aligning-the-display)) |
 | `progressFile` | empty | Where progress is written. Empty: `~/.claude/progress-pie`. |
+| `temperatureFile` | empty | Where the [claudetemp plugin](#claudetemp-plugin) writes its reading. While it is fresh, the status line keeps the temperature instead of the pie. Empty: `~/.claude/claudetemp`. |
+
+## claudetemp plugin
+
+Shows the temperature of an SHT41 or SHTC3 sensor on the same adapter in the
+status line, like `72.4°F` (formatted `%0.1f`), read every 30 seconds. With no
+sensor, nothing is shown. It works on its own, without `progress-pie` or the
+matrix. Install the reader and the plugin (after adding the marketplace as in
+the [quick start](#quick-start-the-led-matrix-in-claude-code)):
+
+```sh
+go install github.com/ApolloX939/mcp2221/cmd/claudetemp@latest
+claude plugin install claudetemp@mcp2221 --scope user
+```
+
+Settings, in `/plugin configure claudetemp@mcp2221`:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `enabled` | `true` | Off: nothing is read or shown |
+| `unit` | `F` | `F` for Fahrenheit or `C` for Celsius |
+| `binary` | `claudetemp` | Name or path of the program, found as for `claudematrix` |
+| `temperatureFile` | empty | Where the latest reading is written. Empty: `~/.claude/claudetemp`. |
+
+With `progress-pie` installed too, the temperature keeps the status line and
+the pie is only on the matrix. The adapter can be open in one program at a
+time, so no reading is taken while `claudematrix` has it open; the last
+reading stays.
 
 ## Go library
 

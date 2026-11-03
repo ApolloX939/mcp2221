@@ -15,6 +15,11 @@
       "name": "progress-pie",
       "source": "./progress-pie",
       "description": "Shows a pie of a multi-part job's progress in the status line and on the MCP2221 + HT16K33 or IS31FL3741 LED matrix, including while background work runs."
+    },
+    {
+      "name": "claudetemp",
+      "source": "./claudetemp",
+      "description": "Shows the temperature of an SHT41 or SHTC3 sensor on the MCP2221 or FT232H adapter in the status line, every 30 seconds, in Fahrenheit or Celsius."
     }
   ]
 }

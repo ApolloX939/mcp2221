@@ -1,6 +1,6 @@
 {
   "name": "progress-pie",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Shows a pie of a multi-part job's progress in the status line and on the MCP2221 + HT16K33 LED matrix, including while background work runs.",
   "author": {
     "name": "David",
@@ -42,6 +42,12 @@
       "title": "Rotation",
       "description": "Turn the display clockwise by 0, 90, 180 or 270 degrees, for a matrix mounted sideways or upside down. Find the value with claudematrix -align.",
       "default": 0
+    },
+    "temperatureFile": {
+      "type": "string",
+      "title": "Temperature file",
+      "description": "Where the claudetemp plugin writes its latest reading. While it is fresh, the status line keeps the temperature instead of the pie. Empty: ~/.claude/claudetemp.",
+      "default": ""
     },
     "progressFile": {
       "type": "string",
