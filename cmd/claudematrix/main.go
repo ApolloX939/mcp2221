@@ -42,7 +42,16 @@ func main() {
 	align := flag.Bool("align", false, "alignment mode: move a sample countdown with the arrow keys (or h j k l / a s d w), then q to print the -clock-x and -clock-y to use")
 	countdown := flag.Bool("countdown", false, "show only the countdown to the usage limit's reset, and exit when there is none")
 	colors := flag.Bool("colors", false, "colour test: fill the display with red, green, then orange, in turn, until interrupted")
+	clearOnly := flag.Bool("clear", false, "blank the display and exit (for when a killed claudematrix, as on Windows, could not blank it itself)")
 	flag.Parse()
+
+	if *clearOnly {
+		if err := runClear(byte(*addr), *brightness); err != nil {
+			fmt.Fprintln(os.Stderr, "claudematrix:", err)
+			os.Exit(1)
+		}
+		return
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 	defer stop()
@@ -131,6 +140,35 @@ type shows struct {
 	limit         string // usage-limit file for the countdown; "" = none
 	countdownOnly bool   // only the countdown; stop when there is none
 	clock         offset // where the countdown sits on the matrix
+}
+
+// runClear blanks the display once. The animation it follows may have just
+// been killed and not yet let go of the adapter, so it retries for a while.
+func runClear(addr byte, brightness float64) error {
+	var err error
+	for deadline := time.Now().Add(3 * time.Second); ; {
+		if err = clearOnce(addr, brightness); err == nil {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return err
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func clearOnce(addr byte, brightness float64) error {
+	bus, err := openBus()
+	if err != nil {
+		return err
+	}
+	defer bus.Close()
+	grid, err := openDisplay(bus, addr, brightness)
+	if err != nil {
+		return err
+	}
+	grid.Fill(ht16k33.Off)
+	return grid.Show()
 }
 
 // animate runs the animation until ctx ends (or, countdown only, until the

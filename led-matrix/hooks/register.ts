@@ -23,6 +23,8 @@ let lastWritten: string | undefined
 // Bumped whenever the animation is stopped or replaced, so a spawn that was
 // still looking for the program knows it has been overtaken.
 let generation = 0
+// Resolves once the last stopped animation is gone and the matrix blanked.
+let pendingClear: Promise<void> = Promise.resolve()
 
 // A setting left at its default is worked out here, so the plugin has no
 // path of one person's machine in it. A bare program name is looked for in
@@ -88,6 +90,8 @@ async function spawn($: EngineInterface, options: PluginOptions, kind: Animation
   const mine = generation
 
   const binary = await resolveBinary($, String(options.binary))
+  // The previous animation is fully stopped and the matrix blanked first.
+  await pendingClear
   if (mine !== generation) return
   // -heartbeat makes claudematrix print a line every half second, so the
   // loop below wakes up regularly and can notice it has been asked to stop.
@@ -100,8 +104,19 @@ async function spawn($: EngineInterface, options: PluginOptions, kind: Animation
     stop: () => {
       if (isStopped) return
       isStopped = true
-      // Ending the stream sends the child SIGTERM; it blanks the matrix.
-      void child.return(undefined).catch(() => {})
+      // Ending the stream stops the child. Where that is a SIGTERM it blanks
+      // the matrix itself; on Windows the child is killed outright and cannot,
+      // so once it is gone a short-lived `claudematrix -clear` blanks it.
+      // Chained, so a clear never lands on a later animation: spawn waits.
+      const ended = child.return(undefined).catch(() => {})
+      pendingClear = pendingClear.then(async () => {
+        await ended
+        try {
+          await $.process.run([binary, '-clear', '-addr', String(options.addr)], { timeoutMs: 10000 })
+        } catch (err) {
+          logOnce($, `led-matrix: couldn't blank the matrix: ${String(err)}`)
+        }
+      })
     },
   }
   current = animation
